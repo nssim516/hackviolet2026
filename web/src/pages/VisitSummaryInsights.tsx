@@ -35,7 +35,7 @@ export default function VisitSummaryInsights() {
             </div>
             <div className="flex flex-col justify-center">
               <h2 className="text-xl font-bold leading-tight">Dr. Sarah Smith</h2>
-              <p className="text-slate-500 text-sm font-medium mt-1">Oct 24, 2:30 PM</p>
+              <p className="text-slate-500 text-sm font-medium mt-1">Jan 2, 2:30 PM</p>
               <p className="text-slate-400 text-xs">Cardiology Clinic</p>
             </div>
           </div>
@@ -151,7 +151,7 @@ export default function VisitSummaryInsights() {
                   Schedule Lab Work
                 </span>
                 <span className="text-sm text-slate-500">
-                  Lipid panel blood draw for Nov 15th.
+                  Lipid panel blood draw for Feb 15th.
                 </span>
               </div>
             </label>

@@ -100,7 +100,7 @@ export default function HealthJournalTimeline() {
                   </div>
                 </div>
                 <span className="text-xs font-bold bg-slate-50 text-slate-500 px-2 py-1 rounded-lg">
-                  Oct 24
+                  Jan 2
                 </span>
               </div>
               <div className="px-4 pb-4">
