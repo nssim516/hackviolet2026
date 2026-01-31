@@ -1,4 +1,4 @@
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 
 function clarityApi(): Plugin {
@@ -160,12 +160,18 @@ ${transcript}
   };
 }
 
-export default defineConfig(({ command }) => ({
-  plugins: [react(), clarityApi()],
-  // Relative base makes static hosting (e.g., GitHub Pages) safer without hardcoding repo name.
-  base: command === "build" ? "./" : "/",
-  server: {
-    port: 3000,
-    strictPort: true,
-  },
-}));
+export default defineConfig(({ command, mode }) => {
+  // Load all env vars (not just VITE_-prefixed) so the API middleware can read them
+  const env = loadEnv(mode, process.cwd(), "");
+  process.env.OPENAI_API_KEY = env.OPENAI_API_KEY;
+
+  return {
+    plugins: [react(), clarityApi()],
+    // Relative base makes static hosting (e.g., GitHub Pages) safer without hardcoding repo name.
+    base: command === "build" ? "./" : "/",
+    server: {
+      port: 3000,
+      strictPort: true,
+    },
+  };
+});
