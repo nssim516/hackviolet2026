@@ -1,12 +1,25 @@
 import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { computeBiasDetection } from "../lib/biasScore";
-
-type NextStep = { title: string; detail?: string; done: boolean };
-type MedicalTerm = { term: string; explanation: string };
+import { useVisitInsights, type MedicalTerm, type NextStep } from "../state/visitInsights";
 
 export default function VisitSummaryInsights() {
   const navigate = useNavigate();
+  const {
+    transcript,
+    summaryBullets,
+    nextSteps,
+    followUpQuestions,
+    medicalTerms,
+    biasDetection,
+    setTranscript,
+    setSummaryBullets,
+    setNextSteps,
+    setFollowUpQuestions,
+    setMedicalTerms,
+    setBiasDetection,
+    reset: resetInsights,
+  } = useVisitInsights();
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -17,13 +30,8 @@ export default function VisitSummaryInsights() {
   const [error, setError] = useState<string | null>(null);
 
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  const [transcript, setTranscript] = useState<string>("");
-  const [summaryBullets, setSummaryBullets] = useState<string[]>([]);
-  const [nextSteps, setNextSteps] = useState<NextStep[]>([]);
-  const [medicalTerms, setMedicalTerms] = useState<MedicalTerm[]>([]);
-  const [followUpQuestions, setFollowUpQuestions] = useState<string[]>([]);
-  const [serverBiasScore, setServerBiasScore] = useState<number | null>(null);
-  const [serverBiasNotes, setServerBiasNotes] = useState<string[]>([]);
+  const serverBiasScore = biasDetection.score;
+  const serverBiasNotes = biasDetection.notes;
 
   const audioUrl = useMemo(() => {
     if (!audioBlob) return null;
@@ -88,13 +96,7 @@ export default function VisitSummaryInsights() {
     setError(null);
     setStatus(null);
     setAudioBlob(null);
-    setTranscript("");
-    setSummaryBullets([]);
-    setNextSteps([]);
-    setMedicalTerms([]);
-    setFollowUpQuestions([]);
-    setServerBiasScore(null);
-    setServerBiasNotes([]);
+    resetInsights();
   };
 
   const generateInsights = async (blob: Blob) => {
@@ -166,10 +168,12 @@ export default function VisitSummaryInsights() {
       setFollowUpQuestions(
         Array.isArray(insightsJson?.followUpQuestions) ? insightsJson.followUpQuestions : []
       );
-      setServerBiasScore(
-        typeof insightsJson?.biasDetection?.score === "number" ? insightsJson.biasDetection.score : null
-      );
-      setServerBiasNotes(Array.isArray(insightsJson?.biasDetection?.notes) ? insightsJson.biasDetection.notes : []);
+
+      setBiasDetection({
+        score:
+          typeof insightsJson?.biasDetection?.score === "number" ? insightsJson.biasDetection.score : null,
+        notes: Array.isArray(insightsJson?.biasDetection?.notes) ? insightsJson.biasDetection.notes : [],
+      });
 
       setStatus("Done.");
       setTimeout(() => setStatus(null), 1200);
@@ -441,11 +445,18 @@ export default function VisitSummaryInsights() {
         <section className="flex flex-col gap-3 pb-12">
           <div className="flex items-center justify-between px-1">
             <h3 className="text-lg font-bold text-slate-800">Medical Terms Explained</h3>
-            <button className="text-hackviolet-start text-sm font-bold">View all</button>
+            <button
+              className="text-hackviolet-start text-sm font-bold disabled:opacity-40"
+              type="button"
+              onClick={() => navigate("/terms")}
+              disabled={medicalTerms.length === 0}
+            >
+              View all
+            </button>
           </div>
           <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 -mx-4 px-4 snap-x">
             {medicalTerms.length ? (
-              medicalTerms.map((t, i) => (
+              medicalTerms.slice(0, 2).map((t, i) => (
                 <div
                   key={`${t.term}-${i}`}
                   className="snap-center shrink-0 w-[240px] flex flex-col gap-3 p-5 rounded-2xl bg-white border border-slate-100 shadow-sm"
