@@ -406,7 +406,7 @@ export default function Profile() {
 
               <div className="grid grid-cols-2 gap-3">
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cycle Length</span>
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cycle Length (Days)</span>
                   <input
                     type="number"
                     value={data.cycleLength}

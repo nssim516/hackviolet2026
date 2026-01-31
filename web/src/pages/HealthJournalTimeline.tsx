@@ -102,7 +102,11 @@ export default function HealthJournalTimeline() {
                   months.
                 </div>
                 <div className="mt-3 flex items-center justify-end">
-                  <button className="text-xs font-bold text-hack-violet flex items-center gap-1 transition-colors">
+                  <button
+                    type="button"
+                    onClick={() => navigate("/visit/1")}
+                    className="text-xs font-bold text-hack-violet flex items-center gap-1 transition-colors"
+                  >
                     DETAILS{" "}
                     <span className="material-symbols-outlined text-[16px]">chevron_right</span>
                   </button>
@@ -141,7 +145,11 @@ export default function HealthJournalTimeline() {
                   Annual physical completed. All vitals normal. Recommended starting Vitamin D.
                 </div>
                 <div className="mt-3 flex items-center justify-end">
-                  <button className="text-xs font-bold text-hack-pink flex items-center gap-1 transition-colors">
+                  <button
+                    type="button"
+                    onClick={() => navigate("/visit/2")}
+                    className="text-xs font-bold text-hack-pink flex items-center gap-1 transition-colors"
+                  >
                     DETAILS{" "}
                     <span className="material-symbols-outlined text-[16px]">chevron_right</span>
                   </button>
