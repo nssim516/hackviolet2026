@@ -1,7 +1,206 @@
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
+interface SuggestedQuestion {
+  category: string;
+  question: string;
+}
+
+const STORAGE_KEY = "clarity-prepare";
+
+const CATEGORY_STYLES: Record<string, { bg: string; text: string }> = {
+  Medication: { bg: "bg-blue-50", text: "text-blue-600" },
+  Lifestyle: { bg: "bg-purple-50", text: "text-purple-600" },
+  Monitoring: { bg: "bg-orange-50", text: "text-orange-600" },
+  Diagnosis: { bg: "bg-rose-50", text: "text-rose-600" },
+  Prevention: { bg: "bg-green-50", text: "text-green-600" },
+  "Follow-up": { bg: "bg-cyan-50", text: "text-cyan-600" },
+};
+
+function categoryStyle(cat: string) {
+  return CATEGORY_STYLES[cat] ?? { bg: "bg-gray-50", text: "text-gray-600" };
+}
 
 export default function PrepareForAppointment() {
   const navigate = useNavigate();
+
+  // --- persisted state ---
+  const [symptoms, setSymptoms] = useState("");
+  const [goals, setGoals] = useState("");
+  const [questions, setQuestions] = useState<SuggestedQuestion[]>([]);
+  const [savedIndices, setSavedIndices] = useState<Set<number>>(new Set());
+  const [starredIndices, setStarredIndices] = useState<Set<number>>(new Set());
+
+  // --- transient state ---
+  const [loading, setLoading] = useState(false);
+  const [moreLoading, setMoreLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [saveFlash, setSaveFlash] = useState(false);
+
+  // mic recording state per field
+  const [recordingField, setRecordingField] = useState<"symptoms" | "goals" | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const chunksRef = useRef<BlobPart[]>([]);
+  const [transcribing, setTranscribing] = useState(false);
+
+  // --- load from localStorage on mount ---
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      if (data.symptoms) setSymptoms(data.symptoms);
+      if (data.goals) setGoals(data.goals);
+      if (Array.isArray(data.questions)) setQuestions(data.questions);
+      if (Array.isArray(data.savedIndices)) setSavedIndices(new Set(data.savedIndices));
+      if (Array.isArray(data.starredIndices)) setStarredIndices(new Set(data.starredIndices));
+    } catch { /* ignore corrupt data */ }
+  }, []);
+
+  // --- save to localStorage ---
+  const persistToStorage = useCallback(() => {
+    const data = {
+      symptoms,
+      goals,
+      questions,
+      savedIndices: [...savedIndices],
+      starredIndices: [...starredIndices],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    setSaveFlash(true);
+    setTimeout(() => setSaveFlash(false), 1500);
+  }, [symptoms, goals, questions, savedIndices, starredIndices]);
+
+  // --- mic recording ---
+  const startRecording = async (field: "symptoms" | "goals") => {
+    setError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : "";
+      const mr = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      mediaRecorderRef.current = mr;
+      chunksRef.current = [];
+
+      mr.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      mr.onstop = async () => {
+        const blob = new Blob(chunksRef.current, { type: mr.mimeType || "audio/webm" });
+        mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
+        mediaStreamRef.current = null;
+        setRecordingField(null);
+        await transcribeAndPopulate(blob, field);
+      };
+
+      mr.start();
+      setRecordingField(field);
+    } catch (e: any) {
+      setRecordingField(null);
+      setError(e?.message ?? "Microphone permission denied.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (!mediaRecorderRef.current) return;
+    mediaRecorderRef.current.stop();
+    mediaRecorderRef.current = null;
+  };
+
+  const transcribeAndPopulate = async (blob: Blob, field: "symptoms" | "goals") => {
+    setTranscribing(true);
+    setError(null);
+    try {
+      const resp = await fetch("/api/whisper", {
+        method: "POST",
+        headers: { "Content-Type": blob.type || "audio/webm" },
+        body: blob,
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data?.error ?? "Transcription failed.");
+      const text = (data?.text ?? "").toString();
+      if (field === "symptoms") {
+        setSymptoms((prev) => (prev ? prev + " " + text : text));
+      } else {
+        setGoals((prev) => (prev ? prev + " " + text : text));
+      }
+    } catch (e: any) {
+      setError(e?.message ?? "Transcription failed.");
+    } finally {
+      setTranscribing(false);
+    }
+  };
+
+  // --- AI analysis ---
+  const generateQuestions = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resp = await fetch("/api/prepare-questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ symptoms, goals }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data?.error ?? "Failed to generate questions.");
+      const newQs: SuggestedQuestion[] = Array.isArray(data?.questions) ? data.questions : [];
+      setQuestions(newQs);
+      setSavedIndices(new Set());
+      setStarredIndices(new Set());
+    } catch (e: any) {
+      setError(e?.message ?? "Something went wrong.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- More button ---
+  const fetchMore = async () => {
+    setMoreLoading(true);
+    setError(null);
+    try {
+      const resp = await fetch("/api/prepare-questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          symptoms,
+          goals,
+          existing: questions.map((q) => q.question),
+        }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data?.error ?? "Failed to generate more questions.");
+      const newQs: SuggestedQuestion[] = Array.isArray(data?.questions) ? data.questions : [];
+      setQuestions((prev) => [...prev, ...newQs]);
+    } catch (e: any) {
+      setError(e?.message ?? "Something went wrong.");
+    } finally {
+      setMoreLoading(false);
+    }
+  };
+
+  // --- toggle helpers ---
+  const toggleSaved = (i: number) => {
+    setSavedIndices((prev) => {
+      const next = new Set(prev);
+      next.has(i) ? next.delete(i) : next.add(i);
+      return next;
+    });
+  };
+
+  const toggleStarred = (i: number) => {
+    setStarredIndices((prev) => {
+      const next = new Set(prev);
+      next.has(i) ? next.delete(i) : next.add(i);
+      return next;
+    });
+  };
+
+  const isBusy = loading || moreLoading || transcribing;
 
   return (
     <div className="relative flex h-full w-full flex-col max-w-md mx-auto overflow-hidden min-h-screen pb-32">
@@ -18,9 +217,13 @@ export default function PrepareForAppointment() {
         <h2 className="text-text-dark text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">
           Prepare for Appointment
         </h2>
-        <button className="flex w-12 items-center justify-end group">
-          <p className="text-hack-violet hover:text-hack-pink transition-colors text-base font-bold leading-normal tracking-[0.015em] shrink-0">
-            Save
+        <button
+          className="flex w-12 items-center justify-end group"
+          type="button"
+          onClick={persistToStorage}
+        >
+          <p className={`text-base font-bold leading-normal tracking-[0.015em] shrink-0 transition-colors ${saveFlash ? "text-green-500" : "text-hack-violet hover:text-hack-pink"}`}>
+            {saveFlash ? "Saved!" : "Save"}
           </p>
         </button>
       </header>
@@ -29,7 +232,6 @@ export default function PrepareForAppointment() {
       <div className="pt-6 px-4 pb-2">
         <div className="flex flex-col items-center justify-center gap-1">
           <div className="size-20 rounded-full overflow-hidden bg-gray-100 mb-2 ring-4 ring-white shadow-md">
-            {/* TODO: Replace with actual doctor avatar component or local image */}
             <img
               alt="Dr. Smith profile portrait"
               className="w-full h-full object-cover"
@@ -66,9 +268,24 @@ export default function PrepareForAppointment() {
               <textarea
                 className="w-full resize-none rounded-2xl border-0 bg-white text-text-dark placeholder:text-gray-300 p-5 pb-14 text-base font-medium leading-relaxed shadow-sm ring-1 ring-gray-100 focus:ring-2 focus:ring-hack-violet/20 transition-all min-h-[160px]"
                 placeholder="How have you been feeling lately? Any changes in sleep or diet?"
+                value={symptoms}
+                onChange={(e) => setSymptoms(e.target.value)}
               />
-              <button className="absolute bottom-3 right-3 p-3 rounded-full bg-gray-50 hover:bg-gray-100 text-hack-violet transition-colors flex items-center justify-center">
-                <span className="material-symbols-outlined text-[20px]">mic</span>
+              <button
+                type="button"
+                onClick={() =>
+                  recordingField === "symptoms" ? stopRecording() : startRecording("symptoms")
+                }
+                disabled={isBusy && recordingField !== "symptoms"}
+                className={`absolute bottom-3 right-3 p-3 rounded-full transition-colors flex items-center justify-center ${
+                  recordingField === "symptoms"
+                    ? "bg-red-500 text-white"
+                    : "bg-gray-50 hover:bg-gray-100 text-hack-violet"
+                }`}
+              >
+                <span className="material-symbols-outlined text-[20px]">
+                  {recordingField === "symptoms" ? "stop" : "mic"}
+                </span>
               </button>
             </div>
           </label>
@@ -83,13 +300,36 @@ export default function PrepareForAppointment() {
               <textarea
                 className="w-full resize-none rounded-2xl border-0 bg-white text-text-dark placeholder:text-gray-300 p-5 pb-14 text-base font-medium leading-relaxed shadow-sm ring-1 ring-gray-100 focus:ring-2 focus:ring-hack-violet/20 transition-all min-h-[140px]"
                 placeholder="What do you hope to get out of this visit?"
+                value={goals}
+                onChange={(e) => setGoals(e.target.value)}
               />
-              <button className="absolute bottom-3 right-3 p-3 rounded-full bg-gray-50 hover:bg-gray-100 text-hack-violet transition-colors flex items-center justify-center">
-                <span className="material-symbols-outlined text-[20px]">mic</span>
+              <button
+                type="button"
+                onClick={() =>
+                  recordingField === "goals" ? stopRecording() : startRecording("goals")
+                }
+                disabled={isBusy && recordingField !== "goals"}
+                className={`absolute bottom-3 right-3 p-3 rounded-full transition-colors flex items-center justify-center ${
+                  recordingField === "goals"
+                    ? "bg-red-500 text-white"
+                    : "bg-gray-50 hover:bg-gray-100 text-hack-violet"
+                }`}
+              >
+                <span className="material-symbols-outlined text-[20px]">
+                  {recordingField === "goals" ? "stop" : "mic"}
+                </span>
               </button>
             </div>
           </label>
         </div>
+
+        {/* Status / error banners */}
+        {transcribing && (
+          <p className="mt-3 text-xs font-semibold text-hack-violet animate-pulse">Transcribing audio…</p>
+        )}
+        {error && (
+          <p className="mt-3 text-xs font-semibold text-red-500">{error}</p>
+        )}
       </div>
 
       {/* Suggested questions */}
@@ -103,113 +343,148 @@ export default function PrepareForAppointment() {
               Suggested Questions
             </h2>
             <p className="text-gray-400 text-xs mt-1 font-medium">
-              Personalized AI recommendations
+              {questions.length > 0
+                ? `${savedIndices.size} of ${questions.length} added to your list`
+                : "Personalized AI recommendations"}
             </p>
           </div>
-          <button className="text-xs font-bold text-hack-violet hover:text-hack-pink transition-colors">
-            View all
-          </button>
+          {questions.length > 0 && (
+            <span className="text-xs font-bold text-gray-400">
+              {questions.length} generated
+            </span>
+          )}
         </div>
 
         <div className="flex overflow-x-auto no-scrollbar gap-4 px-4 pb-6 snap-x snap-mandatory">
-          {/* Card 1 */}
-          <div className="snap-center shrink-0 w-[280px] bg-white p-6 rounded-3xl shadow-md ring-1 ring-gray-100 relative flex flex-col justify-between h-[200px]">
-            <div className="absolute top-5 right-5">
-              <button className="text-gray-200 hover:text-yellow-400 transition-colors">
-                <span className="material-symbols-outlined text-[24px]">star</span>
-              </button>
-            </div>
-            <div>
-              <span className="inline-block px-2 py-0.5 rounded bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-widest mb-4">
-                Medication
+          {questions.length === 0 && !loading && (
+            <div className="snap-center shrink-0 w-[280px] bg-white p-6 rounded-3xl shadow-md ring-1 ring-gray-100 flex flex-col items-center justify-center h-[200px] text-center">
+              <span className="material-symbols-outlined text-gray-200 text-[40px] mb-3">
+                psychology
               </span>
-              <p className="text-text-dark font-bold leading-tight text-lg">
-                Does this new medication interact with my daily vitamins?
+              <p className="text-gray-400 text-sm font-medium leading-relaxed">
+                Add your notes above, then tap<br /><strong>Start AI Analysis</strong> to get personalized questions.
               </p>
             </div>
-            <button className="mt-4 flex items-center gap-2 group w-full">
-              <div className="size-6 rounded-full border-2 border-gray-200 group-hover:border-hack-violet group-hover:bg-hack-violet/5 transition-all flex items-center justify-center">
-                <span className="material-symbols-outlined text-transparent group-hover:text-hack-violet text-[16px]">
-                  check
-                </span>
-              </div>
-              <span className="text-sm font-bold text-gray-400 group-hover:text-hack-violet transition-colors">
-                Add to list
-              </span>
-            </button>
-          </div>
+          )}
 
-          {/* Card 2 */}
-          <div className="snap-center shrink-0 w-[280px] bg-white p-6 rounded-3xl shadow-md ring-1 ring-gray-100 relative flex flex-col justify-between h-[200px]">
-            <div className="absolute top-5 right-5">
-              <button className="text-yellow-400">
-                <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  star
-                </span>
-              </button>
-            </div>
-            <div>
-              <span className="inline-block px-2 py-0.5 rounded bg-purple-50 text-purple-600 text-[10px] font-bold uppercase tracking-widest mb-4">
-                Lifestyle
+          {loading && questions.length === 0 && (
+            <div className="snap-center shrink-0 w-[280px] bg-white p-6 rounded-3xl shadow-md ring-1 ring-gray-100 flex flex-col items-center justify-center h-[200px]">
+              <span className="material-symbols-outlined text-hack-violet text-[32px] animate-spin">
+                progress_activity
               </span>
-              <p className="text-text-dark font-bold leading-tight text-lg">
-                Are there specific diet changes that could help with energy?
-              </p>
+              <p className="mt-3 text-sm font-semibold text-gray-500">Generating questions…</p>
             </div>
-            <button className="mt-4 flex items-center gap-2 group w-full">
-              <div className="size-6 rounded-full gradient-bg flex items-center justify-center">
-                <span className="material-symbols-outlined text-white text-[16px]">check</span>
-              </div>
-              <span className="text-sm font-bold text-hack-violet transition-colors">Added</span>
-            </button>
-          </div>
+          )}
 
-          {/* Card 3 */}
-          <div className="snap-center shrink-0 w-[280px] bg-white p-6 rounded-3xl shadow-md ring-1 ring-gray-100 relative flex flex-col justify-between h-[200px]">
-            <div className="absolute top-5 right-5">
-              <button className="text-gray-200 hover:text-yellow-400 transition-colors">
-                <span className="material-symbols-outlined text-[24px]">star</span>
-              </button>
-            </div>
-            <div>
-              <span className="inline-block px-2 py-0.5 rounded bg-orange-50 text-orange-600 text-[10px] font-bold uppercase tracking-widest mb-4">
-                Monitoring
-              </span>
-              <p className="text-text-dark font-bold leading-tight text-lg">
-                What side effects should I watch for in the next 3 months?
-              </p>
-            </div>
-            <button className="mt-4 flex items-center gap-2 group w-full">
-              <div className="size-6 rounded-full border-2 border-gray-200 group-hover:border-hack-violet group-hover:bg-hack-violet/5 transition-all flex items-center justify-center">
-                <span className="material-symbols-outlined text-transparent group-hover:text-hack-violet text-[16px]">
-                  check
-                </span>
+          {questions.map((q, i) => {
+            const style = categoryStyle(q.category);
+            const isSaved = savedIndices.has(i);
+            const isStarred = starredIndices.has(i);
+
+            return (
+              <div
+                key={i}
+                className="snap-center shrink-0 w-[280px] bg-white p-6 rounded-3xl shadow-md ring-1 ring-gray-100 relative flex flex-col justify-between h-[200px]"
+              >
+                <div className="absolute top-5 right-5">
+                  <button
+                    type="button"
+                    onClick={() => toggleStarred(i)}
+                    className={`transition-colors ${isStarred ? "text-yellow-400" : "text-gray-200 hover:text-yellow-400"}`}
+                  >
+                    <span
+                      className="material-symbols-outlined text-[24px]"
+                      style={isStarred ? { fontVariationSettings: "'FILL' 1" } : undefined}
+                    >
+                      star
+                    </span>
+                  </button>
+                </div>
+                <div>
+                  <span
+                    className={`inline-block px-2 py-0.5 rounded ${style.bg} ${style.text} text-[10px] font-bold uppercase tracking-widest mb-4`}
+                  >
+                    {q.category}
+                  </span>
+                  <p className="text-text-dark font-bold leading-tight text-lg">{q.question}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => toggleSaved(i)}
+                  className="mt-4 flex items-center gap-2 group w-full"
+                >
+                  {isSaved ? (
+                    <>
+                      <div className="size-6 rounded-full gradient-bg flex items-center justify-center">
+                        <span className="material-symbols-outlined text-white text-[16px]">check</span>
+                      </div>
+                      <span className="text-sm font-bold text-hack-violet transition-colors">Added</span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="size-6 rounded-full border-2 border-gray-200 group-hover:border-hack-violet group-hover:bg-hack-violet/5 transition-all flex items-center justify-center">
+                        <span className="material-symbols-outlined text-transparent group-hover:text-hack-violet text-[16px]">
+                          check
+                        </span>
+                      </div>
+                      <span className="text-sm font-bold text-gray-400 group-hover:text-hack-violet transition-colors">
+                        Add to list
+                      </span>
+                    </>
+                  )}
+                </button>
               </div>
-              <span className="text-sm font-bold text-gray-400 group-hover:text-hack-violet transition-colors">
-                Add to list
-              </span>
-            </button>
-          </div>
+            );
+          })}
 
           {/* More card */}
-          <div className="snap-center shrink-0 w-[140px] bg-gray-50/50 p-5 rounded-3xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-gray-100 transition-colors group">
-            <div className="size-10 rounded-full bg-white flex items-center justify-center shadow-sm">
-              <span className="material-symbols-outlined text-gray-400 group-hover:text-hack-violet transition-colors">
-                add
-              </span>
-            </div>
-            <p className="text-xs font-extrabold text-gray-400 group-hover:text-hack-violet transition-colors text-center uppercase tracking-widest">
-              More
-            </p>
-          </div>
+          {questions.length > 0 && (
+            <button
+              type="button"
+              onClick={fetchMore}
+              disabled={moreLoading}
+              className="snap-center shrink-0 w-[140px] bg-gray-50/50 p-5 rounded-3xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-gray-100 transition-colors group"
+            >
+              {moreLoading ? (
+                <span className="material-symbols-outlined text-hack-violet text-[28px] animate-spin">
+                  progress_activity
+                </span>
+              ) : (
+                <>
+                  <div className="size-10 rounded-full bg-white flex items-center justify-center shadow-sm">
+                    <span className="material-symbols-outlined text-gray-400 group-hover:text-hack-violet transition-colors">
+                      add
+                    </span>
+                  </div>
+                  <p className="text-xs font-extrabold text-gray-400 group-hover:text-hack-violet transition-colors text-center uppercase tracking-widest">
+                    More
+                  </p>
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
 
       {/* Bottom CTA */}
       <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background-light via-background-light to-transparent z-40 flex justify-center">
-        <button className="w-full max-w-md gradient-bg text-white font-extrabold text-lg py-4 rounded-2xl shadow-xl shadow-hack-violet/20 flex items-center justify-center gap-3 transition-transform active:scale-[0.98]">
-          <span className="material-symbols-outlined text-[24px]">auto_awesome</span>
-          Start AI Analysis
+        <button
+          type="button"
+          onClick={generateQuestions}
+          disabled={loading || (!symptoms.trim() && !goals.trim())}
+          className="w-full max-w-md gradient-bg text-white font-extrabold text-lg py-4 rounded-2xl shadow-xl shadow-hack-violet/20 flex items-center justify-center gap-3 transition-transform active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
+        >
+          {loading ? (
+            <>
+              <span className="material-symbols-outlined text-[24px] animate-spin">progress_activity</span>
+              Analyzing…
+            </>
+          ) : (
+            <>
+              <span className="material-symbols-outlined text-[24px]">auto_awesome</span>
+              Start AI Analysis
+            </>
+          )}
         </button>
       </div>
     </div>

@@ -95,7 +95,7 @@ export default function Profile() {
             }
           >
             <span className="material-symbols-outlined text-[28px]">insights</span>
-            <span className="text-[10px] font-semibold">Trends</span>
+            <span className="text-[10px] font-semibold">Visit</span>
           </NavLink>
 
           <NavLink
