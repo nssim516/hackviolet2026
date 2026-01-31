@@ -61,24 +61,6 @@ export default function HealthJournalTimeline() {
             id="journal-input"
             placeholder="I woke up feeling a bit better..."
           />
-          <div className="mt-5 flex gap-3 overflow-x-auto no-scrollbar pb-1">
-            <button className="group flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-xl gradient-bg text-white pl-3 pr-4 transition-all active:scale-95 shadow-lg shadow-hack-violet/20">
-              <span className="material-symbols-outlined text-[20px]">sentiment_satisfied</span>
-              <span className="text-sm font-bold">Calm</span>
-            </button>
-            <button className="group flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-xl bg-slate-50 hover:bg-slate-100 pl-3 pr-4 transition-all active:scale-95">
-              <span className="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-600">
-                sentiment_worried
-              </span>
-              <span className="text-sm font-medium text-slate-600">Anxious</span>
-            </button>
-            <button className="group flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-xl bg-slate-50 hover:bg-slate-100 pl-3 pr-4 transition-all active:scale-95">
-              <span className="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-600">
-                healing
-              </span>
-              <span className="text-sm font-medium text-slate-600">Pain</span>
-            </button>
-          </div>
         </section>
 
         {/* Recent history header */}
