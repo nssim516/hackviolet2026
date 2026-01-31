@@ -1,9 +1,18 @@
+import { useNavigate } from "react-router-dom";
+
 export default function AppointmentAssistant() {
+  const navigate = useNavigate();
+
   return (
     <div className="bg-background-light min-h-screen flex flex-col overflow-hidden relative">
       {/* Header */}
       <header className="flex items-center p-4 pt-6 pb-2 justify-between z-20">
-        <button className="text-slate-400 hover:text-slate-600 flex size-12 shrink-0 items-center justify-center rounded-full active:bg-slate-100 transition-colors">
+        <button
+          className="text-slate-400 hover:text-slate-600 flex size-12 shrink-0 items-center justify-center rounded-full active:bg-slate-100 transition-colors"
+          type="button"
+          onClick={() => navigate("/prepare")}
+          aria-label="Back to prepare"
+        >
           <span className="material-symbols-outlined" style={{ fontSize: 28 }}>
             expand_more
           </span>

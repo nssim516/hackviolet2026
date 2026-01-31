@@ -1,9 +1,18 @@
+import { useNavigate } from "react-router-dom";
+
 export default function AppointmentReflection() {
+  const navigate = useNavigate();
+
   return (
     <div className="relative flex h-full min-h-screen w-full flex-col overflow-x-hidden pb-32">
       {/* Header */}
       <div className="sticky top-0 z-50 flex items-center bg-white/80 backdrop-blur-md p-4 pb-2 justify-between border-b border-slate-100">
-        <button className="flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-slate-100 transition-colors">
+        <button
+          className="flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-slate-100 transition-colors"
+          type="button"
+          onClick={() => navigate("/summary")}
+          aria-label="Back to visit insights"
+        >
           <span className="material-symbols-outlined text-slate-900" style={{ fontSize: 24 }}>
             arrow_back
           </span>

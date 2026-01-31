@@ -1,9 +1,18 @@
+import { useNavigate } from "react-router-dom";
+
 export default function VisitSummaryInsights() {
+  const navigate = useNavigate();
+
   return (
     <div className="relative flex h-full min-h-screen w-full flex-col max-w-md mx-auto overflow-x-hidden pb-24">
       {/* Header */}
       <header className="sticky top-0 z-20 flex items-center justify-between p-4 bg-background-light/90 backdrop-blur-md">
-        <button className="flex size-10 items-center justify-center rounded-full hover:bg-black/5 transition-colors">
+        <button
+          className="flex size-10 items-center justify-center rounded-full hover:bg-black/5 transition-colors"
+          type="button"
+          onClick={() => navigate("/journal")}
+          aria-label="Back to journal"
+        >
           <span className="material-symbols-outlined text-slate-900">arrow_back_ios_new</span>
         </button>
         <h1 className="text-lg font-bold leading-tight tracking-tight">Visit Insights</h1>

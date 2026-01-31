@@ -1,4 +1,8 @@
+import { NavLink, useNavigate } from "react-router-dom";
+
 export default function HealthJournalTimeline() {
+  const navigate = useNavigate();
+
   return (
     <div className="bg-background-light min-h-screen flex flex-col overflow-x-hidden">
       {/* Header */}
@@ -11,14 +15,18 @@ export default function HealthJournalTimeline() {
           </div>
           <h1 className="text-base font-bold tracking-tight text-slate-900">Health Journal</h1>
           <div className="flex items-center justify-end w-10">
-            <button className="relative overflow-hidden w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center ring-2 ring-white hover:ring-hack-violet/30 transition-all">
+            <NavLink
+              to="/profile"
+              className="relative overflow-hidden w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center ring-2 ring-white hover:ring-hack-violet/30 transition-all"
+              aria-label="Go to profile"
+            >
               {/* TODO: Replace with actual user avatar component or local image */}
               <img
                 alt="User Profile Portrait"
                 className="w-full h-full object-cover"
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuAP3xYuUXZOKXOoIlmBuFJ10zmQt3yiJsNOoLn9J-_xXRsQtM9kmT7lUlQA3rcMZqaTACNFFz7PqTkhL1vMql68caAw3ltGNPxDQpkTG5n5vR7bB3tIslV7SB26bPEYZIXpFSkKbeC0n2G-aTEE2TPgapLfUKEvxAU47Jh8Mxp2omyl4dp1r80K0LjvvdUs3SDC9cu9q1Mn4IkwJCjPkJt65emRddpd7pe4cNAL8THqlj1CB5GPjnS65GN_Kxq0uutLofuWDUSpb4ob"
               />
-            </button>
+            </NavLink>
           </div>
         </div>
       </header>
@@ -173,7 +181,11 @@ export default function HealthJournalTimeline() {
       {/* Floating CTA */}
       <div className="fixed bottom-24 left-0 right-0 z-50 pointer-events-none px-4">
         <div className="max-w-md mx-auto flex justify-center">
-          <button className="pointer-events-auto shadow-[0_12px_40px_rgba(139,92,246,0.3)] gradient-bg hover:opacity-95 active:scale-95 text-white font-extrabold text-base py-4 px-8 rounded-full flex items-center gap-2 transition-all transform duration-200">
+          <button
+            className="pointer-events-auto shadow-[0_12px_40px_rgba(139,92,246,0.3)] gradient-bg hover:opacity-95 active:scale-95 text-white font-extrabold text-base py-4 px-8 rounded-full flex items-center gap-2 transition-all transform duration-200"
+            type="button"
+            onClick={() => navigate("/prepare")}
+          >
             <span className="material-symbols-outlined text-[24px]">medical_services</span>
             Prepare for Appointment
           </button>
@@ -183,27 +195,29 @@ export default function HealthJournalTimeline() {
       {/* Bottom nav */}
       <nav className="fixed bottom-0 w-full z-40 bg-white/90 backdrop-blur-xl border-t border-slate-200/50">
         <div className="max-w-md mx-auto h-[84px] pb-6 flex justify-around items-center px-4">
-          <a className="relative flex flex-col items-center gap-1 w-16" href="#">
+          <NavLink to="/journal" className="relative flex flex-col items-center gap-1 w-16">
             <div className="absolute -top-[12px] w-8 h-1 gradient-bg rounded-b-full" />
             <span className="material-symbols-outlined gradient-text font-black text-[28px]">
               book_2
             </span>
             <span className="text-[10px] font-bold gradient-text">Journal</span>
-          </a>
-          <a
+          </NavLink>
+
+          <NavLink
+            to="/summary"
             className="flex flex-col items-center gap-1 w-16 text-slate-400 hover:text-slate-600 transition-colors"
-            href="#"
           >
             <span className="material-symbols-outlined text-[28px]">insights</span>
             <span className="text-[10px] font-semibold">Trends</span>
-          </a>
-          <a
+          </NavLink>
+
+          <NavLink
+            to="/profile"
             className="flex flex-col items-center gap-1 w-16 text-slate-400 hover:text-slate-600 transition-colors"
-            href="#"
           >
             <span className="material-symbols-outlined text-[28px]">person</span>
             <span className="text-[10px] font-semibold">Profile</span>
-          </a>
+          </NavLink>
         </div>
       </nav>
 

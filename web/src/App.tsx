@@ -1,44 +1,32 @@
-import { useState } from "react";
-import WelcomeSignIn from "./pages/WelcomeSignIn";
-import HealthJournalTimeline from "./pages/HealthJournalTimeline";
-import PrepareForAppointment from "./pages/PrepareForAppointment";
+import { Navigate, Route, Routes } from "react-router-dom";
 import AppointmentAssistant from "./pages/AppointmentAssistant";
 import AppointmentReflection from "./pages/AppointmentReflection";
+import HealthJournalTimeline from "./pages/HealthJournalTimeline";
+import PrepareForAppointment from "./pages/PrepareForAppointment";
+import Profile from "./pages/Profile";
 import VisitSummaryInsights from "./pages/VisitSummaryInsights";
-
-const pages = [
-  { label: "Sign In", component: WelcomeSignIn },
-  { label: "Journal", component: HealthJournalTimeline },
-  { label: "Prepare", component: PrepareForAppointment },
-  { label: "Assistant", component: AppointmentAssistant },
-  { label: "Reflection", component: AppointmentReflection },
-  { label: "Summary", component: VisitSummaryInsights },
-] as const;
+import WelcomeSignIn from "./pages/WelcomeSignIn";
 
 export default function App() {
-  const [current, setCurrent] = useState(0);
-  const Page = pages[current].component;
-
   return (
     <div className="min-h-screen bg-background-light">
-      {/* Dev nav bar - screen switcher */}
-      <div className="sticky top-0 z-[100] bg-slate-900/95 backdrop-blur text-white px-3 py-2 flex gap-2 overflow-x-auto no-scrollbar">
-        {pages.map((p, i) => (
-          <button
-            key={p.label}
-            onClick={() => setCurrent(i)}
-            className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-              i === current
-                ? "bg-hack-violet text-white"
-                : "bg-slate-700 text-slate-300 hover:bg-slate-600"
-            }`}
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
+      <Routes>
+        {/* Landing page */}
+        <Route path="/" element={<WelcomeSignIn />} />
 
-      <Page />
+        {/* Core flow */}
+        <Route path="/journal" element={<HealthJournalTimeline />} />
+        <Route path="/prepare" element={<PrepareForAppointment />} />
+        <Route path="/assistant" element={<AppointmentAssistant />} />
+        <Route path="/summary" element={<VisitSummaryInsights />} />
+        <Route path="/reflection" element={<AppointmentReflection />} />
+
+        {/* Profile */}
+        <Route path="/profile" element={<Profile />} />
+
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </div>
   );
 }

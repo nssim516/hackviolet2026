@@ -1,4 +1,8 @@
+import { useNavigate } from "react-router-dom";
+
 export default function WelcomeSignIn() {
+  const navigate = useNavigate();
+
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-hidden">
       {/* Background blurs */}
@@ -61,7 +65,11 @@ export default function WelcomeSignIn() {
           </div>
 
           <div className="flex flex-col gap-4 mt-4">
-            <button className="flex items-center justify-center w-full h-14 bg-hackviolet active:scale-[0.98] text-white text-lg font-bold rounded-2xl transition-all duration-200 shadow-xl shadow-primary-start/25">
+            <button
+              className="flex items-center justify-center w-full h-14 bg-hackviolet active:scale-[0.98] text-white text-lg font-bold rounded-2xl transition-all duration-200 shadow-xl shadow-primary-start/25"
+              type="button"
+              onClick={() => navigate("/journal")}
+            >
               Sign In
             </button>
             <button className="flex items-center justify-center gap-2 w-full h-14 bg-white border border-gray-200 hover:bg-gray-50 active:scale-[0.98] text-dark-gray text-base font-semibold rounded-2xl transition-all duration-200">

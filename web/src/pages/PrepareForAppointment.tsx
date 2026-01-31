@@ -1,9 +1,18 @@
+import { useNavigate } from "react-router-dom";
+
 export default function PrepareForAppointment() {
+  const navigate = useNavigate();
+
   return (
     <div className="relative flex h-full w-full flex-col max-w-md mx-auto overflow-hidden min-h-screen pb-32">
       {/* Header */}
       <header className="sticky top-0 z-50 flex items-center bg-background-light/80 backdrop-blur-md p-4 pb-2 justify-between border-b border-gray-100">
-        <button className="text-text-dark flex size-12 shrink-0 items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
+        <button
+          className="text-text-dark flex size-12 shrink-0 items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+          type="button"
+          onClick={() => navigate("/journal")}
+          aria-label="Back to journal"
+        >
           <span className="material-symbols-outlined text-[24px]">arrow_back</span>
         </button>
         <h2 className="text-text-dark text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">
