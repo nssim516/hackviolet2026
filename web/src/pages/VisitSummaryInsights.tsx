@@ -2,6 +2,9 @@ import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { computeBiasDetection } from "../lib/biasScore";
 
+type NextStep = { title: string; detail?: string; done: boolean };
+type MedicalTerm = { term: string; explanation: string };
+
 export default function VisitSummaryInsights() {
   const navigate = useNavigate();
 
@@ -16,6 +19,8 @@ export default function VisitSummaryInsights() {
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [transcript, setTranscript] = useState<string>("");
   const [summaryBullets, setSummaryBullets] = useState<string[]>([]);
+  const [nextSteps, setNextSteps] = useState<NextStep[]>([]);
+  const [medicalTerms, setMedicalTerms] = useState<MedicalTerm[]>([]);
   const [followUpQuestions, setFollowUpQuestions] = useState<string[]>([]);
   const [serverBiasScore, setServerBiasScore] = useState<number | null>(null);
   const [serverBiasNotes, setServerBiasNotes] = useState<string[]>([]);
@@ -85,6 +90,8 @@ export default function VisitSummaryInsights() {
     setAudioBlob(null);
     setTranscript("");
     setSummaryBullets([]);
+    setNextSteps([]);
+    setMedicalTerms([]);
     setFollowUpQuestions([]);
     setServerBiasScore(null);
     setServerBiasNotes([]);
@@ -120,6 +127,42 @@ export default function VisitSummaryInsights() {
       if (!insights.ok) throw new Error(insightsJson?.error ?? "Insights failed.");
 
       setSummaryBullets(Array.isArray(insightsJson?.summaryBullets) ? insightsJson.summaryBullets : []);
+
+      const ns = insightsJson?.nextSteps;
+      if (Array.isArray(ns)) {
+        // Accept either {title, detail?}[] or string[]
+        const mapped: NextStep[] = ns
+          .map((item: any) => {
+            if (typeof item === "string") return { title: item, done: false } satisfies NextStep;
+            if (item && typeof item === "object" && typeof item.title === "string") {
+              return {
+                title: item.title,
+                detail: typeof item.detail === "string" ? item.detail : undefined,
+                done: false,
+              } satisfies NextStep;
+            }
+            return null;
+          })
+          .filter(Boolean) as NextStep[];
+        setNextSteps(mapped);
+      } else {
+        setNextSteps([]);
+      }
+
+      const mt = insightsJson?.medicalTerms;
+      if (Array.isArray(mt)) {
+        const mapped: MedicalTerm[] = mt
+          .map((item: any) => {
+            if (!item || typeof item !== "object") return null;
+            if (typeof item.term !== "string" || typeof item.explanation !== "string") return null;
+            return { term: item.term, explanation: item.explanation } satisfies MedicalTerm;
+          })
+          .filter(Boolean) as MedicalTerm[];
+        setMedicalTerms(mapped);
+      } else {
+        setMedicalTerms([]);
+      }
+
       setFollowUpQuestions(
         Array.isArray(insightsJson?.followUpQuestions) ? insightsJson.followUpQuestions : []
       );
@@ -342,72 +385,55 @@ export default function VisitSummaryInsights() {
         <section className="flex flex-col gap-3">
           <h3 className="text-lg font-bold px-1 text-slate-800">Next Steps</h3>
           <div className="flex flex-col rounded-2xl bg-white p-2 shadow-sm border border-slate-100 divide-y divide-slate-50">
-            <label className="group flex items-start gap-4 p-4 cursor-pointer">
-              <div className="relative flex items-center mt-0.5">
-                <input
-                  className="peer size-6 appearance-none rounded-lg border-2 border-slate-200 bg-transparent checked:border-0 transition-all"
-                  type="checkbox"
-                />
-                <div className="absolute inset-0 hidden peer-checked:flex items-center justify-center rounded-lg bg-hackviolet-gradient pointer-events-none">
-                  <span className="material-symbols-outlined text-white text-[18px] font-bold">
-                    check
-                  </span>
-                </div>
+            {nextSteps.length ? (
+              nextSteps.map((s, idx) => (
+                <label key={idx} className="group flex items-start gap-4 p-4 cursor-pointer">
+                  <div className="relative flex items-center mt-0.5">
+                    <input
+                      className="peer size-6 appearance-none rounded-lg border-2 border-slate-200 bg-transparent checked:border-0 transition-all"
+                      type="checkbox"
+                      checked={s.done}
+                      onChange={() =>
+                        setNextSteps((prev) =>
+                          prev.map((p, i) => (i === idx ? { ...p, done: !p.done } : p))
+                        )
+                      }
+                    />
+                    <div className="absolute inset-0 hidden peer-checked:flex items-center justify-center rounded-lg bg-hackviolet-gradient pointer-events-none">
+                      <span className="material-symbols-outlined text-white text-[18px] font-bold">
+                        check
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col flex-1 gap-1">
+                    <span
+                      className={[
+                        "text-base font-semibold transition-colors",
+                        s.done
+                          ? "text-slate-400 line-through"
+                          : "text-slate-900 group-hover:text-hackviolet-start",
+                      ].join(" ")}
+                    >
+                      {s.title}
+                    </span>
+                    {s.detail && (
+                      <span
+                        className={[
+                          "text-sm",
+                          s.done ? "text-slate-300 line-through" : "text-slate-500",
+                        ].join(" ")}
+                      >
+                        {s.detail}
+                      </span>
+                    )}
+                  </div>
+                </label>
+              ))
+            ) : (
+              <div className="p-4 text-sm text-slate-500">
+                After transcription, we’ll generate an actionable checklist here.
               </div>
-              <div className="flex flex-col flex-1 gap-1">
-                <span className="text-base font-semibold text-slate-900 group-hover:text-hackviolet-start transition-colors">
-                  Pick up prescription
-                </span>
-                <span className="text-sm text-slate-500">
-                  Atorvastatin 10mg ready at pharmacy.
-                </span>
-              </div>
-            </label>
-
-            <label className="group flex items-start gap-4 p-4 cursor-pointer">
-              <div className="relative flex items-center mt-0.5">
-                <input
-                  className="peer size-6 appearance-none rounded-lg border-2 border-slate-200 bg-transparent checked:border-0 transition-all"
-                  type="checkbox"
-                />
-                <div className="absolute inset-0 hidden peer-checked:flex items-center justify-center rounded-lg bg-hackviolet-gradient pointer-events-none">
-                  <span className="material-symbols-outlined text-white text-[18px] font-bold">
-                    check
-                  </span>
-                </div>
-              </div>
-              <div className="flex flex-col flex-1 gap-1">
-                <span className="text-base font-semibold text-slate-900 group-hover:text-hackviolet-start transition-colors">
-                  Schedule Lab Work
-                </span>
-                <span className="text-sm text-slate-500">
-                  Lipid panel blood draw for Feb 15th.
-                </span>
-              </div>
-            </label>
-
-            <label className="group flex items-start gap-4 p-4 cursor-pointer">
-              <div className="relative flex items-center mt-0.5">
-                <input
-                  defaultChecked
-                  className="peer size-6 appearance-none rounded-lg border-2 border-slate-200 bg-transparent checked:border-0 transition-all"
-                  type="checkbox"
-                />
-                <div className="absolute inset-0 hidden peer-checked:flex items-center justify-center rounded-lg bg-hackviolet-gradient pointer-events-none">
-                  <span className="material-symbols-outlined text-white text-[18px] font-bold">
-                    check
-                  </span>
-                </div>
-              </div>
-              <div className="flex flex-col flex-1 gap-1">
-                <span className="text-base font-semibold text-slate-400 line-through">
-                  Book follow-up
-                </span>
-                <span className="text-sm text-slate-300 line-through">
-                  Appointment set for Dec 10th.
-                </span>
-              </div>
-            </label>
+            )}
           </div>
         </section>
 
@@ -418,33 +444,31 @@ export default function VisitSummaryInsights() {
             <button className="text-hackviolet-start text-sm font-bold">View all</button>
           </div>
           <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 -mx-4 px-4 snap-x">
-            <div className="snap-center shrink-0 w-[240px] flex flex-col gap-3 p-5 rounded-2xl bg-white border border-slate-100 shadow-sm">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-slate-50">
-                  <span className="material-symbols-outlined text-[22px] text-hackviolet-gradient">
-                    pill
-                  </span>
+            {medicalTerms.length ? (
+              medicalTerms.map((t, i) => (
+                <div
+                  key={`${t.term}-${i}`}
+                  className="snap-center shrink-0 w-[240px] flex flex-col gap-3 p-5 rounded-2xl bg-white border border-slate-100 shadow-sm"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 rounded-xl bg-slate-50">
+                      <span className="material-symbols-outlined text-[22px] text-hackviolet-gradient">
+                        local_library
+                      </span>
+                    </div>
+                    <span className="font-bold text-base text-slate-800">{t.term}</span>
+                  </div>
+                  <p className="text-sm text-slate-600 leading-relaxed">{t.explanation}</p>
                 </div>
-                <span className="font-bold text-base text-slate-800">Statin</span>
+              ))
+            ) : (
+              <div className="snap-center shrink-0 w-[280px] flex flex-col gap-2 p-5 rounded-2xl bg-white border border-slate-100 shadow-sm">
+                <p className="text-sm font-bold text-slate-800">No terms detected yet</p>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  After transcription, we’ll pull out any jargon and explain it in plain language.
+                </p>
               </div>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                A class of drugs often prescribed by doctors to help lower cholesterol levels in the
-                blood.
-              </p>
-            </div>
-            <div className="snap-center shrink-0 w-[240px] flex flex-col gap-3 p-5 rounded-2xl bg-white border border-slate-100 shadow-sm">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-slate-50">
-                  <span className="material-symbols-outlined text-[22px] text-hackviolet-gradient">
-                    monitor_heart
-                  </span>
-                </div>
-                <span className="font-bold text-base text-slate-800">Hypertension</span>
-              </div>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                Another name for high blood pressure. It can lead to severe health complications.
-              </p>
-            </div>
+            )}
           </div>
         </section>
       </main>
