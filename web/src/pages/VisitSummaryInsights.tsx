@@ -1,7 +1,140 @@
+import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { computeBiasDetection } from "../lib/biasScore";
 
 export default function VisitSummaryInsights() {
   const navigate = useNavigate();
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const chunksRef = useRef<BlobPart[]>([]);
+
+  const [isRecording, setIsRecording] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [transcript, setTranscript] = useState<string>("");
+  const [summaryBullets, setSummaryBullets] = useState<string[]>([]);
+  const [followUpQuestions, setFollowUpQuestions] = useState<string[]>([]);
+  const [serverBiasScore, setServerBiasScore] = useState<number | null>(null);
+  const [serverBiasNotes, setServerBiasNotes] = useState<string[]>([]);
+
+  const audioUrl = useMemo(() => {
+    if (!audioBlob) return null;
+    return URL.createObjectURL(audioBlob);
+  }, [audioBlob]);
+
+  const localBias = useMemo(() => {
+    const combined = [summaryBullets.join("\n"), followUpQuestions.join("\n"), transcript].join("\n");
+    return computeBiasDetection(combined);
+  }, [followUpQuestions, summaryBullets, transcript]);
+
+  const startRecording = async () => {
+    setError(null);
+    setStatus("Requesting microphone…");
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+
+      const mimeType =
+        MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "";
+
+      const mr = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      mediaRecorderRef.current = mr;
+      chunksRef.current = [];
+
+      mr.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      mr.onstop = async () => {
+        const blob = new Blob(chunksRef.current, { type: mr.mimeType || "audio/webm" });
+        setAudioBlob(blob);
+        setIsRecording(false);
+
+        // Release mic.
+        mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
+        mediaStreamRef.current = null;
+
+        // Auto-generate insights after stopping.
+        await generateInsights(blob);
+      };
+
+      mr.start();
+      setIsRecording(true);
+      setStatus("Recording…");
+    } catch (e: any) {
+      setStatus(null);
+      setIsRecording(false);
+      setError(e?.message ?? "Microphone permission denied.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (!mediaRecorderRef.current) return;
+    setStatus("Stopping…");
+    mediaRecorderRef.current.stop();
+    mediaRecorderRef.current = null;
+  };
+
+  const reset = () => {
+    setError(null);
+    setStatus(null);
+    setAudioBlob(null);
+    setTranscript("");
+    setSummaryBullets([]);
+    setFollowUpQuestions([]);
+    setServerBiasScore(null);
+    setServerBiasNotes([]);
+  };
+
+  const generateInsights = async (blob: Blob) => {
+    setError(null);
+    setStatus("Transcribing (Whisper)…");
+
+    try {
+      // 1) Whisper STT (server-side proxy; requires OPENAI_API_KEY in web/.env.local)
+      const whisper = await fetch("/api/whisper", {
+        method: "POST",
+        headers: {
+          "Content-Type": blob.type || "audio/webm",
+        },
+        body: blob,
+      });
+      const whisperJson = await whisper.json();
+      if (!whisper.ok) throw new Error(whisperJson?.error ?? "Whisper failed.");
+
+      const text = (whisperJson?.text ?? "").toString();
+      setTranscript(text);
+
+      // 2) Summary bullets + follow-up questions
+      setStatus("Generating visit insights…");
+      const insights = await fetch("/api/visit-insights", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transcript: text }),
+      });
+      const insightsJson = await insights.json();
+      if (!insights.ok) throw new Error(insightsJson?.error ?? "Insights failed.");
+
+      setSummaryBullets(Array.isArray(insightsJson?.summaryBullets) ? insightsJson.summaryBullets : []);
+      setFollowUpQuestions(
+        Array.isArray(insightsJson?.followUpQuestions) ? insightsJson.followUpQuestions : []
+      );
+      setServerBiasScore(
+        typeof insightsJson?.biasDetection?.score === "number" ? insightsJson.biasDetection.score : null
+      );
+      setServerBiasNotes(Array.isArray(insightsJson?.biasDetection?.notes) ? insightsJson.biasDetection.notes : []);
+
+      setStatus("Done.");
+      setTimeout(() => setStatus(null), 1200);
+    } catch (e: any) {
+      setStatus(null);
+      setError(e?.message ?? "Something went wrong.");
+    }
+  };
 
   return (
     <div className="relative flex h-full min-h-screen w-full flex-col max-w-md mx-auto overflow-x-hidden pb-24">
@@ -54,66 +187,154 @@ export default function VisitSummaryInsights() {
         <section className="flex flex-col gap-3">
           <h3 className="text-lg font-bold px-1 text-slate-800">Visit Summary</h3>
 
-          {/* Audio player card */}
-          <div className="flex flex-col gap-3 rounded-2xl bg-slate-900 p-5 shadow-lg shadow-slate-200">
+          {/* Record + STT card */}
+          <div className="flex flex-col gap-4 rounded-2xl bg-slate-900 p-5 shadow-lg shadow-slate-200">
             <div className="flex items-center justify-between gap-4">
               <div className="flex flex-col">
-                <p className="text-white text-base font-bold leading-tight">
-                  Listen to AI Summary
-                </p>
+                <p className="text-white text-base font-bold leading-tight">Record + Generate</p>
                 <p className="text-slate-400 text-xs font-normal mt-1">
-                  Generated from visit audio
+                  Audio is recorded in-browser and sent to OpenAI only when generating insights.
                 </p>
               </div>
-              {/* TODO: Wire up audio playback functionality */}
-              <button className="flex shrink-0 items-center justify-center rounded-full size-12 bg-hackviolet-gradient text-white shadow-lg transition-transform active:scale-95">
-                <span
-                  className="material-symbols-outlined text-[28px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
+              {!isRecording ? (
+                <button
+                  className="flex shrink-0 items-center justify-center rounded-full size-12 bg-hackviolet-gradient text-white shadow-lg transition-transform active:scale-95"
+                  type="button"
+                  onClick={startRecording}
+                  aria-label="Start recording"
                 >
-                  play_arrow
-                </span>
-              </button>
+                  <span className="material-symbols-outlined text-[26px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    mic
+                  </span>
+                </button>
+              ) : (
+                <button
+                  className="flex shrink-0 items-center justify-center rounded-full size-12 bg-red-500 text-white shadow-lg transition-transform active:scale-95"
+                  type="button"
+                  onClick={stopRecording}
+                  aria-label="Stop recording"
+                >
+                  <span className="material-symbols-outlined text-[26px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    stop
+                  </span>
+                </button>
+              )}
             </div>
-            <div className="pt-2 flex flex-col gap-2">
-              <div className="flex h-8 items-center justify-center gap-[3px]">
-                <div className="w-1 h-3 rounded-full bg-purple-400/40" />
-                <div className="w-1 h-5 rounded-full bg-purple-400/60" />
-                <div className="w-1 h-3 rounded-full bg-purple-400/40" />
-                <div className="w-1 h-6 rounded-full bg-purple-400" />
-                <div className="w-1 h-4 rounded-full bg-pink-400/50" />
-                <div className="w-1 h-3 rounded-full bg-pink-400/30" />
-                <div className="w-1 h-5 rounded-full bg-pink-400/70" />
-                <div className="w-1 h-7 rounded-full bg-pink-400" />
-                <div className="w-1 h-4 rounded-full bg-pink-400/50" />
-                <div className="w-1 h-3 rounded-full bg-white/20" />
-                <div className="w-1 h-2 rounded-full bg-white/20" />
-                <div className="w-1 h-4 rounded-full bg-white/20" />
-                <div className="w-1 h-2 rounded-full bg-white/20" />
-                <div className="w-1 h-3 rounded-full bg-white/20" />
-                <div className="w-1 h-2 rounded-full bg-white/20" />
-                <div className="w-1 h-2 rounded-full bg-white/20" />
-                <div className="w-1 h-3 rounded-full bg-white/20" />
-                <div className="w-1 h-2 rounded-full bg-white/20" />
-                <div className="w-1 h-4 rounded-full bg-white/20" />
-                <div className="w-1 h-2 rounded-full bg-white/20" />
-                <div className="w-1 h-2 rounded-full bg-white/20" />
-                <div className="w-1 h-3 rounded-full bg-white/20" />
+
+            {status && (
+              <div className="text-xs font-semibold text-slate-300 tracking-wide">{status}</div>
+            )}
+            {error && (
+              <div className="text-xs font-semibold text-red-300 tracking-wide">{error}</div>
+            )}
+
+            {audioUrl && (
+              <div className="rounded-xl bg-white/5 border border-white/10 p-3">
+                <audio className="w-full" controls src={audioUrl} />
+                <div className="mt-2 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={reset}
+                    className="text-[11px] font-bold text-slate-300 hover:text-white transition-colors"
+                  >
+                    Clear
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center justify-between text-xs font-medium text-slate-500 tracking-wider">
-                <span>02:14</span>
-                <span>05:30</span>
-              </div>
-            </div>
+            )}
           </div>
 
-          {/* Summary text */}
+          {/* Summary bullets */}
           <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
-            <p className="text-base font-normal leading-relaxed text-slate-600">
-              The doctor confirmed your blood pressure is currently stable, which is great news.
-              They suggested increasing your daily fiber intake to help with digestion and have
-              prescribed a low-dose statin to manage cholesterol levels effectively moving forward.
-            </p>
+            {summaryBullets.length ? (
+              <ul className="list-disc pl-5 space-y-2 text-base font-normal leading-relaxed text-slate-600">
+                {summaryBullets.map((b, i) => (
+                  <li key={i}>{b}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-base font-normal leading-relaxed text-slate-600">
+                Record a short snippet, then we’ll generate bullet-point visit notes here.
+              </p>
+            )}
+
+            {transcript && (
+              <details className="mt-4 rounded-xl bg-slate-50 border border-slate-100 p-4">
+                <summary className="cursor-pointer text-sm font-bold text-slate-700">
+                  View transcript
+                </summary>
+                <p className="mt-3 text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
+                  {transcript}
+                </p>
+              </details>
+            )}
+          </div>
+
+          {/* Follow-up questions */}
+          <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
+            <div className="flex items-center justify-between">
+              <h4 className="text-base font-bold text-slate-900">Recommended follow-up questions</h4>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                AI-generated
+              </span>
+            </div>
+            {followUpQuestions.length ? (
+              <ul className="mt-3 space-y-2">
+                {followUpQuestions.map((q, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <span className="material-symbols-outlined text-hackviolet-start text-[18px] mt-0.5">
+                      help
+                    </span>
+                    <span className="text-sm text-slate-700 leading-relaxed">{q}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-3 text-sm text-slate-500 leading-relaxed">
+                After transcription, we’ll suggest 3–6 clarifying questions you can ask at a follow-up.
+              </p>
+            )}
+          </div>
+
+          {/* Bias detection (placeholder) */}
+          <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
+            <div className="flex items-center justify-between">
+              <h4 className="text-base font-bold text-slate-900">Bias detection score</h4>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                Experimental
+              </span>
+            </div>
+
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                  Model (placeholder)
+                </p>
+                <p className="mt-1 text-2xl font-extrabold text-slate-900">
+                  {serverBiasScore ?? "—"}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                  Local heuristic
+                </p>
+                <p className="mt-1 text-2xl font-extrabold text-slate-900">{localBias.score}</p>
+              </div>
+            </div>
+
+            {(serverBiasNotes.length > 0 || localBias.flags.length > 0) && (
+              <div className="mt-4 rounded-xl bg-violet-50 border border-violet-100 p-4">
+                <p className="text-sm font-bold text-slate-900">What we flagged (non-judgmental)</p>
+                <ul className="mt-2 list-disc pl-5 space-y-1 text-sm text-slate-700">
+                  {serverBiasNotes.map((n, i) => (
+                    <li key={`s-${i}`}>{n}</li>
+                  ))}
+                  {localBias.flags.map((f, i) => (
+                    <li key={`l-${i}`}>{f}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </section>
 
