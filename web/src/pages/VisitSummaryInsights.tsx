@@ -193,7 +193,7 @@ export default function VisitSummaryInsights() {
               <div className="flex flex-col">
                 <p className="text-white text-base font-bold leading-tight">Record + Generate</p>
                 <p className="text-slate-400 text-xs font-normal mt-1">
-                  Audio is recorded in-browser and sent to OpenAI only when generating insights.
+                  Audio is only used to generate insights and provide transcript.
                 </p>
               </div>
               {!isRecording ? (

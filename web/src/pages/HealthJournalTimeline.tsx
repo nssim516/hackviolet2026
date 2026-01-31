@@ -208,7 +208,7 @@ export default function HealthJournalTimeline() {
             className="flex flex-col items-center gap-1 w-16 text-slate-400 hover:text-slate-600 transition-colors"
           >
             <span className="material-symbols-outlined text-[28px]">insights</span>
-            <span className="text-[10px] font-semibold">Trends</span>
+            <span className="text-[10px] font-semibold">Visit</span>
           </NavLink>
 
           <NavLink
