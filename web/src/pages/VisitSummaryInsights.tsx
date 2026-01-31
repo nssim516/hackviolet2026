@@ -301,7 +301,7 @@ export default function VisitSummaryInsights() {
             <div className="flex items-center justify-between">
               <h4 className="text-base font-bold text-slate-900">Bias detection score</h4>
               <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                Experimental
+                AI-Generated
               </span>
             </div>
 
@@ -324,7 +324,7 @@ export default function VisitSummaryInsights() {
 
             {(serverBiasNotes.length > 0 || localBias.flags.length > 0) && (
               <div className="mt-4 rounded-xl bg-violet-50 border border-violet-100 p-4">
-                <p className="text-sm font-bold text-slate-900">What we flagged (non-judgmental)</p>
+                <p className="text-sm font-bold text-slate-900">What we flagged</p>
                 <ul className="mt-2 list-disc pl-5 space-y-1 text-sm text-slate-700">
                   {serverBiasNotes.map((n, i) => (
                     <li key={`s-${i}`}>{n}</li>
