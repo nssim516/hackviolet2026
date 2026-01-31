@@ -100,10 +100,15 @@ Summarize this medical visit transcript in a patient-centered, non-judgmental wa
 
 Return ONLY valid JSON with exactly these keys:
 - summaryBullets: string[]  (3-6 bullets, plain language)
+- nextSteps: { title: string, detail?: string }[] (3-8 actionable checklist items)
 - followUpQuestions: string[] (3-6 questions the patient can ask next time)
 - biasDetection: { score: number, notes: string[] }
 
 The biasDetection.score should be a 0-100 placeholder estimate of dismissive/biased communication signals (0 = none, 100 = frequent). Keep it conservative and explain briefly in notes. Do NOT accuse anyone; just describe language patterns.
+
+For nextSteps:
+- Make them practical (tests, follow-ups, questions to ask, paperwork, medication pickup, scheduling).
+- Do NOT give diagnosis/treatment advice. If missing info, phrase as “Confirm with clinician: …”.
 
 Transcript:
 """
