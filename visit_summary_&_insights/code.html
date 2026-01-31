@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Visit Summary &amp; Insights</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "hackviolet-start": "#7C3AED",
+                        "hackviolet-end": "#EC4899",
+                        "background-light": "#F8F9FA",
+                        "surface-light": "#FFFFFF",
+                        "text-primary": "#1E293B",
+                        "text-secondary": "#64748B",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "2xl": "2rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        @layer utilities {
+            .bg-hackviolet-gradient {
+                background: linear-gradient(135deg, #7C3AED 0%, #EC4899 100%);
+            }
+            .text-hackviolet-gradient {
+                background: linear-gradient(135deg, #7C3AED 0%, #EC4899 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+            .no-scrollbar::-webkit-scrollbar {
+                display: none;
+            }
+            .no-scrollbar {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+        }
+    </style>
+<style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light font-display text-text-primary transition-colors duration-200">
+<div class="relative flex h-full min-h-screen w-full flex-col max-w-md mx-auto overflow-x-hidden pb-24">
+<header class="sticky top-0 z-20 flex items-center justify-between p-4 bg-background-light/90 backdrop-blur-md">
+<button class="flex size-10 items-center justify-center rounded-full hover:bg-black/5 transition-colors">
+<span class="material-symbols-outlined text-text-primary">arrow_back_ios_new</span>
+</button>
+<h1 class="text-lg font-bold leading-tight tracking-tight">Visit Insights</h1>
+<button class="flex size-10 items-center justify-center rounded-full hover:bg-black/5 transition-colors">
+<span class="material-symbols-outlined text-text-primary">share</span>
+</button>
+</header>
+<main class="flex flex-col gap-6 px-4 pt-2">
+<section class="flex flex-col gap-4">
+<div class="flex items-center gap-4 p-4 rounded-2xl bg-white shadow-sm border border-slate-100">
+<div class="relative shrink-0">
+<div class="size-16 rounded-full bg-cover bg-center ring-2 ring-white" data-alt="Portrait of Dr. Sarah Smith" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA-XV4Uj0Ieg_NGCpTC0DB3Pta56wMCoQxOCx99ZFYTTZrZp-QWUvLe-F8d2obCU-1xf04nAk2STuqQ2lGZMLkJyZfTSExNkdvre8kEQ3DxRa16MAiV-sP4qtGjCfF0TxlwLIfs-b1BeYLrMBAyaJdwOrWLs83yGM8BYQXtRW-WcCusTqx8GXzwHbNSQSfwhjR6Uok6pRs6e7p3kabg_8CrMPQJpPyoOaAcphna1yIHyxITyJV7W84KrjeQMMEYuqH1jNj1WF3IgIEw');">
+</div>
+<div class="absolute -bottom-1 -right-1 flex items-center justify-center size-6 rounded-full bg-hackviolet-gradient border-2 border-white text-white">
+<span class="material-symbols-outlined text-[14px] font-bold">medical_services</span>
+</div>
+</div>
+<div class="flex flex-col justify-center">
+<h2 class="text-xl font-bold leading-tight">Dr. Sarah Smith</h2>
+<p class="text-text-secondary text-sm font-medium mt-1">Oct 24, 2:30 PM</p>
+<p class="text-slate-400 text-xs">Cardiology Clinic</p>
+</div>
+</div>
+</section>
+<section class="flex flex-col gap-3">
+<h3 class="text-lg font-bold px-1 text-slate-800">Visit Summary</h3>
+<div class="flex flex-col gap-3 rounded-2xl bg-slate-900 p-5 shadow-lg shadow-slate-200">
+<div class="flex items-center justify-between gap-4">
+<div class="flex flex-col">
+<p class="text-white text-base font-bold leading-tight">Listen to AI Summary</p>
+<p class="text-slate-400 text-xs font-normal mt-1">Generated from visit audio</p>
+</div>
+<button class="flex shrink-0 items-center justify-center rounded-full size-12 bg-hackviolet-gradient text-white shadow-lg transition-transform active:scale-95">
+<span class="material-symbols-outlined text-[28px] fill-1">play_arrow</span>
+</button>
+</div>
+<div class="pt-2 flex flex-col gap-2">
+<div class="flex h-8 items-center justify-center gap-[3px]">
+<div class="w-1 h-3 rounded-full bg-purple-400/40"></div>
+<div class="w-1 h-5 rounded-full bg-purple-400/60"></div>
+<div class="w-1 h-3 rounded-full bg-purple-400/40"></div>
+<div class="w-1 h-6 rounded-full bg-purple-400"></div>
+<div class="w-1 h-4 rounded-full bg-pink-400/50"></div>
+<div class="w-1 h-3 rounded-full bg-pink-400/30"></div>
+<div class="w-1 h-5 rounded-full bg-pink-400/70"></div>
+<div class="w-1 h-7 rounded-full bg-pink-400"></div>
+<div class="w-1 h-4 rounded-full bg-pink-400/50"></div>
+<div class="w-1 h-3 rounded-full bg-white/20"></div>
+<div class="w-1 h-2 rounded-full bg-white/20"></div>
+<div class="w-1 h-4 rounded-full bg-white/20"></div>
+<div class="w-1 h-2 rounded-full bg-white/20"></div>
+<div class="w-1 h-3 rounded-full bg-white/20"></div>
+<div class="w-1 h-2 rounded-full bg-white/20"></div>
+<div class="w-1 h-2 rounded-full bg-white/20"></div>
+<div class="w-1 h-3 rounded-full bg-white/20"></div>
+<div class="w-1 h-2 rounded-full bg-white/20"></div>
+<div class="w-1 h-4 rounded-full bg-white/20"></div>
+<div class="w-1 h-2 rounded-full bg-white/20"></div>
+<div class="w-1 h-2 rounded-full bg-white/20"></div>
+<div class="w-1 h-3 rounded-full bg-white/20"></div>
+</div>
+<div class="flex items-center justify-between text-xs font-medium text-slate-500 tracking-wider">
+<span>02:14</span>
+<span>05:30</span>
+</div>
+</div>
+</div>
+<div class="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
+<p class="text-base font-normal leading-relaxed text-slate-600">
+                        The doctor confirmed your blood pressure is currently stable, which is great news. They suggested increasing your daily fiber intake to help with digestion and have prescribed a low-dose statin to manage cholesterol levels effectively moving forward.
+                    </p>
+</div>
+</section>
+<section class="flex flex-col gap-3">
+<h3 class="text-lg font-bold px-1 text-slate-800">Next Steps</h3>
+<div class="flex flex-col rounded-2xl bg-white p-2 shadow-sm border border-slate-100 divide-y divide-slate-50">
+<label class="group flex items-start gap-4 p-4 cursor-pointer">
+<div class="relative flex items-center mt-0.5">
+<input class="peer size-6 appearance-none rounded-lg border-2 border-slate-200 bg-transparent checked:border-0 transition-all" type="checkbox"/>
+<div class="absolute inset-0 hidden peer-checked:flex items-center justify-center rounded-lg bg-hackviolet-gradient pointer-events-none">
+<span class="material-symbols-outlined text-white text-[18px] font-bold">check</span>
+</div>
+</div>
+<div class="flex flex-col flex-1 gap-1">
+<span class="text-base font-semibold text-slate-900 group-hover:text-hackviolet-start transition-colors">Pick up prescription</span>
+<span class="text-sm text-text-secondary">Atorvastatin 10mg ready at pharmacy.</span>
+</div>
+</label>
+<label class="group flex items-start gap-4 p-4 cursor-pointer">
+<div class="relative flex items-center mt-0.5">
+<input class="peer size-6 appearance-none rounded-lg border-2 border-slate-200 bg-transparent checked:border-0 transition-all" type="checkbox"/>
+<div class="absolute inset-0 hidden peer-checked:flex items-center justify-center rounded-lg bg-hackviolet-gradient pointer-events-none">
+<span class="material-symbols-outlined text-white text-[18px] font-bold">check</span>
+</div>
+</div>
+<div class="flex flex-col flex-1 gap-1">
+<span class="text-base font-semibold text-slate-900 group-hover:text-hackviolet-start transition-colors">Schedule Lab Work</span>
+<span class="text-sm text-text-secondary">Lipid panel blood draw for Nov 15th.</span>
+</div>
+</label>
+<label class="group flex items-start gap-4 p-4 cursor-pointer">
+<div class="relative flex items-center mt-0.5">
+<input checked="" class="peer size-6 appearance-none rounded-lg border-2 border-slate-200 bg-transparent checked:border-0 transition-all" type="checkbox"/>
+<div class="absolute inset-0 hidden peer-checked:flex items-center justify-center rounded-lg bg-hackviolet-gradient pointer-events-none">
+<span class="material-symbols-outlined text-white text-[18px] font-bold">check</span>
+</div>
+</div>
+<div class="flex flex-col flex-1 gap-1">
+<span class="text-base font-semibold text-slate-400 line-through">Book follow-up</span>
+<span class="text-sm text-slate-300 line-through">Appointment set for Dec 10th.</span>
+</div>
+</label>
+</div>
+</section>
+<section class="flex flex-col gap-3 pb-12">
+<div class="flex items-center justify-between px-1">
+<h3 class="text-lg font-bold text-slate-800">Medical Terms Explained</h3>
+<button class="text-hackviolet-start text-sm font-bold">View all</button>
+</div>
+<div class="flex gap-4 overflow-x-auto no-scrollbar pb-4 -mx-4 px-4 snap-x">
+<div class="snap-center shrink-0 w-[240px] flex flex-col gap-3 p-5 rounded-2xl bg-white border border-slate-100 shadow-sm">
+<div class="flex items-center gap-2">
+<div class="p-2 rounded-xl bg-slate-50">
+<span class="material-symbols-outlined text-[22px] text-hackviolet-gradient">pill</span>
+</div>
+<span class="font-bold text-base text-slate-800">Statin</span>
+</div>
+<p class="text-sm text-slate-600 leading-relaxed">
+                            A class of drugs often prescribed by doctors to help lower cholesterol levels in the blood.
+                        </p>
+</div>
+<div class="snap-center shrink-0 w-[240px] flex flex-col gap-3 p-5 rounded-2xl bg-white border border-slate-100 shadow-sm">
+<div class="flex items-center gap-2">
+<div class="p-2 rounded-xl bg-slate-50">
+<span class="material-symbols-outlined text-[22px] text-hackviolet-gradient">monitor_heart</span>
+</div>
+<span class="font-bold text-base text-slate-800">Hypertension</span>
+</div>
+<p class="text-sm text-slate-600 leading-relaxed">
+                             Another name for high blood pressure. It can lead to severe health complications.
+                        </p>
+</div>
+</div>
+</section>
+</main>
+<div class="fixed bottom-8 left-0 right-0 z-30 flex justify-center px-4 pointer-events-none">
+<button class="pointer-events-auto shadow-xl shadow-pink-500/20 flex items-center justify-center gap-3 h-14 pl-5 pr-7 bg-hackviolet-gradient rounded-full text-white font-bold text-base hover:scale-[1.02] active:scale-95 transition-all">
+<span class="material-symbols-outlined">forum</span>
+                Ask a Follow-up Question
+            </button>
+</div>
+<div class="fixed bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background-light to-transparent pointer-events-none z-10"></div>
+</div>
+
+</body></html>
