@@ -1,15 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-
-type AppointmentEntry = {
-  id: string;
-  dateLabel: string;
-  doctor: string;
-  specialty: string;
-  summary: string;
-  icon: string;
-  accent: "violet" | "pink";
-};
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  JOURNAL_STORAGE_KEY,
+  SEED_ENTRIES,
+  MOODS,
+  VISIT_HISTORY_KEY,
+  type SavedVisit,
+} from "../data/journalData";
 
 type JournalEntry = {
   id: string;
@@ -18,60 +16,11 @@ type JournalEntry = {
   text: string;
 };
 
-const APPOINTMENTS: AppointmentEntry[] = [
-  {
-    id: "appt-2022-01-02",
-    dateLabel: "Jan 3",
-    doctor: "Dr. Emily Chen",
-    specialty: "Cardiology",
-    summary:
-      "Discussed blood pressure medication adjustments. Next follow-up scheduled for 3 months.",
-    icon: "cardiology",
-    accent: "violet",
-  },
-  {
-    id: "appt-2022-01-02",
-    dateLabel: "Jan 3",
-    doctor: "Dr. Emily Chen",
-    specialty: "Cardiology",
-    summary:
-      "Discussed blood pressure medication adjustments. Next follow-up scheduled for 3 months.",
-    icon: "cardiology",
-    accent: "violet",
-  },
-  {
-    id: "appt-2025-09-11",
-    dateLabel: "Sep 11",
-    doctor: "Dr. Mark Solis",
-    specialty: "General Practitioner",
-    summary: "Annual physical completed. All vitals normal. Recommended starting Vitamin D.",
-    icon: "stethoscope",
-    accent: "pink",
-  },
-];
-
-const JOURNAL_STORAGE_KEY = "hackviolet.journal.entries.v1";
-
-const SEED_ENTRIES: JournalEntry[] = [
-  {
-    id: "note-2026-01-29",
-    dateLabel: "Jan 29, 2026",
-    mood: "Steady",
-    text: "Woke up less dizzy. Logged BP twice and it felt stable.",
-  },
-  {
-    id: "note-2026-01-25",
-    dateLabel: "Jan 25, 2026",
-    mood: "Anxious",
-    text: "A little nervous before the cardiology appointment. Need to ask about meds timing.",
-  },
-];
-
-const MOODS = [
-  { label: "Calm", icon: "sentiment_satisfied" },
-  { label: "Anxious", icon: "sentiment_worried" },
-  { label: "Pain", icon: "healing" },
-  { label: "Steady", icon: "self_improvement" },
+const MENU_ITEMS = [
+  { to: "/journal", label: "Journal", icon: "book_2" },
+  { to: "/prepare", label: "Prepare", icon: "edit_note" },
+  { to: "/summary", label: "Visit Insights", icon: "insights" },
+  { to: "/profile", label: "Profile", icon: "person" },
 ];
 
 const formatFullDate = (date: Date) =>
@@ -84,6 +33,8 @@ export default function HealthJournalTimeline() {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [showAllNotes, setShowAllNotes] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [savedVisits, setSavedVisits] = useState<SavedVisit[]>([]);
   const todayLabel = useMemo(() => formatFullDate(new Date()), []);
 
   useEffect(() => {
@@ -101,6 +52,25 @@ export default function HealthJournalTimeline() {
     }
     setEntries(SEED_ENTRIES);
   }, []);
+
+  // Load saved visits from localStorage
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(VISIT_HISTORY_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as SavedVisit[];
+        if (Array.isArray(parsed)) setSavedVisits(parsed);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  const deleteVisit = (id: string) => {
+    setSavedVisits((prev) => {
+      const next = prev.filter((v) => v.id !== id);
+      localStorage.setItem(VISIT_HISTORY_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (entries.length > 0) {
@@ -360,7 +330,63 @@ export default function HealthJournalTimeline() {
 
         {/* Timeline */}
         <div className="relative pl-4 ml-2 space-y-8 border-l-2 border-slate-200/60 pb-4">
-          {/* Entry 1 */}
+          {/* Dynamic saved visits */}
+          {savedVisits.map((visit) => {
+            const color = visit.accent === "pink" ? "hack-pink" : "hack-violet";
+            return (
+              <div key={visit.id} className="relative pl-8 group">
+                <div className={`absolute -left-[9px] top-6 h-[16px] w-[16px] rounded-full bg-white border-[3px] border-${color} group-hover:scale-110 transition-transform z-10 shadow-sm`} />
+                <article className="bg-card-light rounded-2xl p-0 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-white overflow-hidden transition-all hover:shadow-md">
+                  <div className="p-4 pb-2 flex justify-between items-start gap-4">
+                    <div className="flex gap-3">
+                      <div className={`h-10 w-10 rounded-full bg-${color}/10 flex items-center justify-center shrink-0`}>
+                        <span className={`material-symbols-outlined text-${color}`}>{visit.icon}</span>
+                      </div>
+                      <div>
+                        <h4 className="text-base font-bold text-slate-900 leading-tight">
+                          {visit.doctor}
+                        </h4>
+                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mt-0.5">
+                          {visit.specialty}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold bg-slate-50 text-slate-500 px-2 py-1 rounded-lg">
+                      {visit.dateLabel}
+                    </span>
+                  </div>
+                  <div className="px-4 pb-4">
+                    <div className="mt-2 text-sm text-slate-600 bg-slate-50/80 p-3 rounded-xl leading-relaxed">
+                      <span className="font-bold text-slate-900 block text-[10px] mb-1 uppercase tracking-wider opacity-60">
+                        Visit Summary
+                      </span>
+                      {visit.summary}
+                    </div>
+                    <div className="mt-3 flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => deleteVisit(visit.id)}
+                        className="text-xs font-bold text-red-400 hover:text-red-600 flex items-center gap-1 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">delete</span>
+                        DELETE
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigate("/summary")}
+                        className={`text-xs font-bold text-${color} flex items-center gap-1 transition-colors`}
+                      >
+                        DETAILS{" "}
+                        <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              </div>
+            );
+          })}
+
+          {/* Dr. Emily Chen (pinned) */}
           <div className="relative pl-8 group">
             <div className="absolute -left-[9px] top-6 h-[16px] w-[16px] rounded-full bg-white border-[3px] border-hack-violet group-hover:scale-110 transition-transform z-10 shadow-sm" />
             <article className="bg-card-light rounded-2xl p-0 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-white overflow-hidden transition-all hover:shadow-md">
@@ -404,7 +430,7 @@ export default function HealthJournalTimeline() {
             </article>
           </div>
 
-          {/* Entry 2 */}
+          {/* Dr. Mark Solis (pinned) */}
           <div className="relative pl-8 group">
             <div className="absolute -left-[9px] top-6 h-[16px] w-[16px] rounded-full bg-white border-[3px] border-slate-300 group-hover:border-hack-pink transition-colors z-10" />
             <article className="bg-card-light rounded-2xl p-0 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-white overflow-hidden transition-all hover:shadow-md">

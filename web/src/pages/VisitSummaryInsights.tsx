@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { computeBiasDetection } from "../lib/biasScore";
+import { VISIT_HISTORY_KEY, type SavedVisit } from "../data/journalData";
 import { useVisitInsights, type MedicalTerm, type NextStep } from "../state/visitInsights";
 
 export default function VisitSummaryInsights() {
@@ -174,6 +175,25 @@ export default function VisitSummaryInsights() {
           typeof insightsJson?.biasDetection?.score === "number" ? insightsJson.biasDetection.score : null,
         notes: Array.isArray(insightsJson?.biasDetection?.notes) ? insightsJson.biasDetection.notes : [],
       });
+
+      // Persist this visit to history so it shows on the journal timeline.
+      const bullets = Array.isArray(insightsJson?.summaryBullets) ? insightsJson.summaryBullets : [];
+      const summaryText = bullets.length > 0 ? bullets.join(" ") : text.slice(0, 120);
+      const now = Date.now();
+      const newVisit: SavedVisit = {
+        id: `visit-${now}`,
+        dateLabel: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        doctor: "Dr. Sarah Smith",
+        specialty: "Cardiology",
+        summary: summaryText,
+        icon: "cardiology",
+        accent: "violet",
+        createdAt: now,
+      };
+      try {
+        const prev = JSON.parse(localStorage.getItem(VISIT_HISTORY_KEY) || "[]") as SavedVisit[];
+        localStorage.setItem(VISIT_HISTORY_KEY, JSON.stringify([newVisit, ...prev]));
+      } catch { /* ignore storage errors */ }
 
       setStatus("Done.");
       setTimeout(() => setStatus(null), 1200);
