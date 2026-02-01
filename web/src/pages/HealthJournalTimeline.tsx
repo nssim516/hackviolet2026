@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import type { PointerEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   JOURNAL_STORAGE_KEY,
   SEED_ENTRIES,
@@ -16,15 +17,18 @@ type JournalEntry = {
   text: string;
 };
 
+
 const MENU_ITEMS = [
-  { to: "/journal", label: "Journal", icon: "book_2" },
-  { to: "/prepare", label: "Prepare", icon: "edit_note" },
-  { to: "/summary", label: "Visit Insights", icon: "insights" },
-  { to: "/profile", label: "Profile", icon: "person" },
+  { label: "Journal", to: "/journal", icon: "book_2" },
+  { label: "Prepare", to: "/prepare", icon: "medical_services" },
+  { label: "Summary", to: "/summary", icon: "insights" },
+  { label: "Profile", to: "/profile", icon: "person" },
 ];
 
 const formatFullDate = (date: Date) =>
   date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+const clampDrag = (value: number, min: number, max: number) => Math.min(max, Math.max(value, min));
 
 export default function HealthJournalTimeline() {
   const navigate = useNavigate();
@@ -33,8 +37,14 @@ export default function HealthJournalTimeline() {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [showAllNotes, setShowAllNotes] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [savedVisits, setSavedVisits] = useState<SavedVisit[]>([]);
+  const [dragOffsets, setDragOffsets] = useState<Record<string, number>>({});
+  const [menuOpen, setMenuOpen] = useState(false);
+  const dragState = useRef<{ id: string | null; startX: number; pointerId: number | null }>({
+    id: null,
+    startX: 0,
+    pointerId: null,
+  });
   const todayLabel = useMemo(() => formatFullDate(new Date()), []);
 
   useEffect(() => {
@@ -94,6 +104,40 @@ export default function HealthJournalTimeline() {
     setSelectedMood(null);
     setStatusMessage("Saved to your journal.");
     window.setTimeout(() => setStatusMessage(null), 1800);
+  };
+
+  const handlePointerDown = (id: string, event: PointerEvent<HTMLElement>) => {
+    dragState.current = { id, startX: event.clientX, pointerId: event.pointerId };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handlePointerMove = (event: PointerEvent<HTMLElement>) => {
+    const { id, startX, pointerId } = dragState.current;
+    if (!id || pointerId !== event.pointerId) {
+      return;
+    }
+    const delta = event.clientX - startX;
+    const clamped = clampDrag(delta, -140, 0);
+    setDragOffsets((prev) => ({ ...prev, [id]: clamped }));
+  };
+
+  const handlePointerEnd = (event: PointerEvent<HTMLElement>) => {
+    const { id, pointerId } = dragState.current;
+    if (!id || pointerId !== event.pointerId) {
+      return;
+    }
+    const offset = dragOffsets[id] ?? 0;
+    if (offset <= -90) {
+      setEntries((prev) => prev.filter((entry) => entry.id !== id));
+      setDragOffsets((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+    } else {
+      setDragOffsets((prev) => ({ ...prev, [id]: 0 }));
+    }
+    dragState.current = { id: null, startX: 0, pointerId: null };
   };
 
   return (
@@ -302,24 +346,36 @@ export default function HealthJournalTimeline() {
         </div>
 
         <section className="mb-10 space-y-3">
-          {(showAllNotes ? entries : entries.slice(0, 3)).map((entry) => (
-            <article
-              key={entry.id}
-              className="bg-white rounded-2xl border border-slate-100 p-4 shadow-[0_6px_20px_rgb(0,0,0,0.03)]"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                  {entry.dateLabel}
-                </p>
-                {entry.mood ? (
-                  <span className="text-xs font-bold text-hack-violet bg-hack-violet/10 px-2 py-1 rounded-full">
-                    {entry.mood}
-                  </span>
-                ) : null}
+          {(showAllNotes ? entries : entries.slice(0, 3)).map((entry) => {
+            const offset = dragOffsets[entry.id] ?? 0;
+            return (
+              <div key={entry.id} className="relative">
+                <div className="absolute inset-0 rounded-2xl bg-rose-500/90 flex items-center justify-end pr-5 text-white text-sm font-bold">
+                  Delete
+                </div>
+                <article
+                  className="bg-white rounded-2xl border border-slate-100 p-4 shadow-[0_6px_20px_rgb(0,0,0,0.03)] transition-transform"
+                  style={{ transform: `translateX(${offset}px)`, touchAction: "pan-y" }}
+                  onPointerDown={(event) => handlePointerDown(entry.id, event)}
+                  onPointerMove={handlePointerMove}
+                  onPointerUp={handlePointerEnd}
+                  onPointerCancel={handlePointerEnd}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      {entry.dateLabel}
+                    </p>
+                    {entry.mood ? (
+                      <span className="text-xs font-bold text-hack-violet bg-hack-violet/10 px-2 py-1 rounded-full">
+                        {entry.mood}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="text-sm text-slate-600 leading-relaxed">{entry.text}</p>
+                </article>
               </div>
-              <p className="text-sm text-slate-600 leading-relaxed">{entry.text}</p>
-            </article>
-          ))}
+            );
+          })}
         </section>
 
         {/* Recent history header */}
