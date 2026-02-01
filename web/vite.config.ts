@@ -197,7 +197,16 @@ Return ONLY valid JSON with exactly these keys:
 - followUpQuestions: string[] (3-6 questions the patient can ask next time)
 - biasDetection: { score: number, notes: string[] }
 
-The biasDetection.score should be a 0-100 placeholder estimate of dismissive/biased communication signals (0 = none, 100 = frequent). Keep it conservative and explain briefly in notes. Do NOT accuse anyone; just describe language patterns.
+The biasDetection.score should be a 0-100 estimate of dismissive/biased communication signals (0 = none, 100 = frequent).
+
+Calibration (be willing to use the middle of the scale when warranted, while staying non-judgmental):
+- 0–10: neutral/supportive, no clear dismissive signals
+- 15–35: mild signals (e.g., minimizing language like “just”, “normal”, rushed tone, vague reassurance)
+- 40–60: moderate signals (repeated minimization/deflection, shutting down questions, unclear rationale)
+- 65–85: strong signals (multiple dismissive patterns across the snippet)
+- 90–100: extreme/frequent signals (consistent dismissal + repeated deflection/authority; rare)
+
+Do NOT accuse anyone or infer intent; just describe language patterns and why you scored it that way in notes.
 
 For nextSteps:
 - Make them practical (tests, follow-ups, questions to ask, paperwork, medication pickup, scheduling).
