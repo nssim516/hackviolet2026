@@ -2,7 +2,6 @@ import type { PointerEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { NavLink, useNavigate } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
 import {
   JOURNAL_STORAGE_KEY,
   SEED_ENTRIES,
@@ -18,19 +17,6 @@ type JournalEntry = {
   text: string;
 };
 
-const MENU_ITEMS = [
-  { to: "/journal", label: "Journal", icon: "book_2" },
-  { to: "/prepare", label: "Prepare", icon: "edit_note" },
-  { to: "/summary", label: "Visit Insights", icon: "insights" },
-  { to: "/profile", label: "Profile", icon: "person" },
-];
-
-const MENU_ITEMS = [
-  { label: "Journal", to: "/journal", icon: "book_2" },
-  { label: "Prepare", to: "/prepare", icon: "medical_services" },
-  { label: "Summary", to: "/summary", icon: "insights" },
-  { label: "Profile", to: "/profile", icon: "person" },
-];
 
 const MENU_ITEMS = [
   { label: "Journal", to: "/journal", icon: "book_2" },
