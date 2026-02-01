@@ -385,7 +385,7 @@ export default function VisitSummaryInsights() {
             <div className="mt-3 grid grid-cols-2 gap-3">
               <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                  Model (placeholder)
+                  Bias Score
                 </p>
                 <p className="mt-1 text-2xl font-extrabold text-slate-900">
                   {serverBiasScore ?? "—"}

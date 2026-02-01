@@ -396,7 +396,7 @@ export default function HealthJournalTimeline() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => navigate("/summary")}
+                        onClick={() => navigate(`/visit/${visit.id}`)}
                         className={`text-xs font-bold text-${color} flex items-center gap-1 transition-colors`}
                       >
                         DETAILS{" "}
