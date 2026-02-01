@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 interface SuggestedQuestion {
+  id: string;
   category: string;
   question: string;
 }
@@ -21,6 +22,37 @@ function categoryStyle(cat: string) {
   return CATEGORY_STYLES[cat] ?? { bg: "bg-gray-50", text: "text-gray-600" };
 }
 
+const hashString = (input: string) => {
+  let hash = 0;
+  for (let i = 0; i < input.length; i += 1) {
+    hash = (hash * 31 + input.charCodeAt(i)) >>> 0;
+  }
+  return hash.toString(36);
+};
+
+const buildQuestionId = (category: string, question: string) =>
+  `q_${hashString(`${category}::${question}`)}`;
+
+const normalizeQuestions = (raw: unknown[]): SuggestedQuestion[] =>
+  raw
+    .map((item) => {
+      if (typeof item === "string") {
+        const question = item.trim();
+        return {
+          id: buildQuestionId("General", question),
+          category: "General",
+          question,
+        };
+      }
+      if (!item || typeof item !== "object") return null;
+      const question = String((item as { question?: unknown }).question ?? "").trim();
+      const category = String((item as { category?: unknown }).category ?? "General").trim() || "General";
+      if (!question) return null;
+      const id = String((item as { id?: unknown }).id ?? buildQuestionId(category, question));
+      return { id, category, question };
+    })
+    .filter((item): item is SuggestedQuestion => Boolean(item));
+
 export default function PrepareForAppointment() {
   const navigate = useNavigate();
 
@@ -28,8 +60,8 @@ export default function PrepareForAppointment() {
   const [symptoms, setSymptoms] = useState("");
   const [goals, setGoals] = useState("");
   const [questions, setQuestions] = useState<SuggestedQuestion[]>([]);
-  const [savedIndices, setSavedIndices] = useState<Set<number>>(new Set());
-  const [starredIndices, setStarredIndices] = useState<Set<number>>(new Set());
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [starredIds, setStarredIds] = useState<Set<string>>(new Set());
 
   // --- transient state ---
   const [loading, setLoading] = useState(false);
@@ -52,10 +84,29 @@ export default function PrepareForAppointment() {
       const data = JSON.parse(raw);
       if (data.symptoms) setSymptoms(data.symptoms);
       if (data.goals) setGoals(data.goals);
-      if (Array.isArray(data.questions)) setQuestions(data.questions);
-      if (Array.isArray(data.savedIndices)) setSavedIndices(new Set(data.savedIndices));
-      if (Array.isArray(data.starredIndices)) setStarredIndices(new Set(data.starredIndices));
-    } catch { /* ignore corrupt data */ }
+      const storedQuestions = Array.isArray(data.questions)
+        ? normalizeQuestions(data.questions)
+        : [];
+      if (storedQuestions.length) setQuestions(storedQuestions);
+      if (Array.isArray(data.savedIds)) {
+        setSavedIds(new Set(data.savedIds));
+      } else if (Array.isArray(data.savedIndices) && storedQuestions.length) {
+        const mapped = data.savedIndices
+          .map((index: number) => storedQuestions[index]?.id)
+          .filter(Boolean);
+        setSavedIds(new Set(mapped));
+      }
+      if (Array.isArray(data.starredIds)) {
+        setStarredIds(new Set(data.starredIds));
+      } else if (Array.isArray(data.starredIndices) && storedQuestions.length) {
+        const mapped = data.starredIndices
+          .map((index: number) => storedQuestions[index]?.id)
+          .filter(Boolean);
+        setStarredIds(new Set(mapped));
+      }
+    } catch {
+      /* ignore corrupt data */
+    }
   }, []);
 
   // --- save to localStorage ---
@@ -64,13 +115,13 @@ export default function PrepareForAppointment() {
       symptoms,
       goals,
       questions,
-      savedIndices: [...savedIndices],
-      starredIndices: [...starredIndices],
+      savedIds: [...savedIds],
+      starredIds: [...starredIds],
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     setSaveFlash(true);
     setTimeout(() => setSaveFlash(false), 1500);
-  }, [symptoms, goals, questions, savedIndices, starredIndices]);
+  }, [symptoms, goals, questions, savedIds, starredIds]);
 
   // --- mic recording ---
   const startRecording = async (field: "symptoms" | "goals") => {
@@ -147,10 +198,10 @@ export default function PrepareForAppointment() {
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data?.error ?? "Failed to generate questions.");
-      const newQs: SuggestedQuestion[] = Array.isArray(data?.questions) ? data.questions : [];
+      const newQs = normalizeQuestions(Array.isArray(data?.questions) ? data.questions : []);
       setQuestions(newQs);
-      setSavedIndices(new Set());
-      setStarredIndices(new Set());
+      setSavedIds(new Set());
+      setStarredIds(new Set());
     } catch (e: any) {
       setError(e?.message ?? "Something went wrong.");
     } finally {
@@ -174,8 +225,18 @@ export default function PrepareForAppointment() {
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data?.error ?? "Failed to generate more questions.");
-      const newQs: SuggestedQuestion[] = Array.isArray(data?.questions) ? data.questions : [];
-      setQuestions((prev) => [...prev, ...newQs]);
+      const newQs = normalizeQuestions(Array.isArray(data?.questions) ? data.questions : []);
+      setQuestions((prev) => {
+        const existing = new Set(prev.map((q) => q.id));
+        const merged = [...prev];
+        for (const q of newQs) {
+          if (!existing.has(q.id)) {
+            merged.push(q);
+            existing.add(q.id);
+          }
+        }
+        return merged;
+      });
     } catch (e: any) {
       setError(e?.message ?? "Something went wrong.");
     } finally {
@@ -184,18 +245,18 @@ export default function PrepareForAppointment() {
   };
 
   // --- toggle helpers ---
-  const toggleSaved = (i: number) => {
-    setSavedIndices((prev) => {
+  const toggleSaved = (id: string) => {
+    setSavedIds((prev) => {
       const next = new Set(prev);
-      next.has(i) ? next.delete(i) : next.add(i);
+      next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
   };
 
-  const toggleStarred = (i: number) => {
-    setStarredIndices((prev) => {
+  const toggleStarred = (id: string) => {
+    setStarredIds((prev) => {
       const next = new Set(prev);
-      next.has(i) ? next.delete(i) : next.add(i);
+      next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
   };
@@ -344,7 +405,7 @@ export default function PrepareForAppointment() {
             </h2>
             <p className="text-gray-400 text-xs mt-1 font-medium">
               {questions.length > 0
-                ? `${savedIndices.size} of ${questions.length} added to your list`
+                ? `${savedIds.size} of ${questions.length} added to your list`
                 : "Personalized AI recommendations"}
             </p>
           </div>
@@ -376,20 +437,20 @@ export default function PrepareForAppointment() {
             </div>
           )}
 
-          {questions.map((q, i) => {
+          {questions.map((q) => {
             const style = categoryStyle(q.category);
-            const isSaved = savedIndices.has(i);
-            const isStarred = starredIndices.has(i);
+            const isSaved = savedIds.has(q.id);
+            const isStarred = starredIds.has(q.id);
 
             return (
               <div
-                key={i}
+                key={q.id}
                 className="snap-center shrink-0 w-[280px] bg-white p-6 rounded-3xl shadow-md ring-1 ring-gray-100 relative flex flex-col justify-between h-[200px]"
               >
                 <div className="absolute top-5 right-5">
                   <button
                     type="button"
-                    onClick={() => toggleStarred(i)}
+                    onClick={() => toggleStarred(q.id)}
                     className={`transition-colors ${isStarred ? "text-yellow-400" : "text-gray-200 hover:text-yellow-400"}`}
                   >
                     <span
@@ -410,7 +471,7 @@ export default function PrepareForAppointment() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => toggleSaved(i)}
+                  onClick={() => toggleSaved(q.id)}
                   className="mt-4 flex items-center gap-2 group w-full"
                 >
                   {isSaved ? (
