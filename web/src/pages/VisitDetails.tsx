@@ -1,4 +1,6 @@
+import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { VISIT_HISTORY_KEY, type SavedVisit } from "../data/journalData";
 
 interface VisitData {
   id: string;
@@ -16,6 +18,28 @@ interface VisitData {
   medications: { name: string; dosage: string; instruction: string; change?: string }[];
   nextSteps: { title: string; detail: string; done: boolean }[];
   notes: string;
+}
+
+function savedVisitToVisitData(sv: SavedVisit): VisitData {
+  const accentColor = sv.accent === "pink" ? "text-hack-pink" : "text-hack-violet";
+  const accentBg = sv.accent === "pink" ? "bg-hack-pink/10" : "bg-hack-violet/10";
+  return {
+    id: sv.id,
+    doctor: sv.doctor,
+    specialty: sv.specialty,
+    date: sv.dateLabel,
+    time: "",
+    location: "",
+    icon: sv.icon,
+    accentColor,
+    accentBg,
+    summary: sv.summaryBullets.join(" "),
+    diagnoses: [],
+    vitals: [],
+    medications: [],
+    nextSteps: sv.nextSteps.map((s) => ({ title: s.title, detail: s.detail ?? "", done: false })),
+    notes: "",
+  };
 }
 
 const VISITS: Record<string, VisitData> = {
@@ -100,7 +124,21 @@ const VISITS: Record<string, VisitData> = {
 export default function VisitDetails() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const visit = id ? VISITS[id] : undefined;
+
+  const visit = useMemo<VisitData | undefined>(() => {
+    if (!id) return undefined;
+    if (VISITS[id]) return VISITS[id];
+    // Try loading from saved visit history in localStorage
+    try {
+      const raw = localStorage.getItem(VISIT_HISTORY_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as SavedVisit[];
+        const match = Array.isArray(saved) ? saved.find((v) => v.id === id) : undefined;
+        if (match) return savedVisitToVisitData(match);
+      }
+    } catch { /* ignore */ }
+    return undefined;
+  }, [id]);
 
   if (!visit) {
     return (
