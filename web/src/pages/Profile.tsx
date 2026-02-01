@@ -283,19 +283,6 @@ export default function Profile() {
                 </div>
               </div>
             </section>
-
-            {/* Privacy */}
-            <section>
-              <div className="rounded-2xl bg-violet-50 border border-violet-100 p-4 flex gap-3 items-start">
-                <span className="material-symbols-outlined text-hackviolet-start">verified_user</span>
-                <div>
-                  <p className="text-sm font-bold text-slate-900">Privacy</p>
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                    This is a prototype. We'll add real account + data controls next.
-                  </p>
-                </div>
-              </div>
-            </section>
           </>
         ) : (
           /* -------- SETTINGS VIEW -------- */
