@@ -261,9 +261,7 @@ export default function HealthJournalTimeline() {
         {/* Greeting */}
         <div className="mb-8">
           <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 leading-tight">
-            Good morning,
-            <br />
-            Sarah.
+            Good morning, Sarah!
           </h2>
           <p className="text-sm font-medium text-slate-500 mt-2 flex items-center gap-1">
             <span className="material-symbols-outlined text-[18px] text-hack-violet">
