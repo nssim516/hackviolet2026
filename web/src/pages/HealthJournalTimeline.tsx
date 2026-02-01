@@ -128,9 +128,102 @@ export default function HealthJournalTimeline() {
 
   return (
     <div className="bg-background-light min-h-screen flex flex-col overflow-x-hidden">
+      {/* Hamburger drawer */}
+      <AnimatePresence>
+        {menuOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              key="backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
+              onClick={() => setMenuOpen(false)}
+            />
+
+            {/* Drawer */}
+            <motion.aside
+              key="drawer"
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="fixed top-0 left-0 bottom-0 z-[70] w-[280px] bg-white shadow-2xl flex flex-col"
+            >
+              {/* Drawer header */}
+              <div className="px-5 pt-6 pb-4 flex items-center justify-between border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-hack-violet/10 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-hack-violet">favorite</span>
+                  </div>
+                  <span className="text-lg font-extrabold gradient-text tracking-tight">
+                    HealthiHer
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-slate-100 transition-colors text-slate-400"
+                >
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+
+              {/* Nav links */}
+              <nav className="flex-1 overflow-y-auto py-3 px-3">
+                {MENU_ITEMS.map((item) => (
+                  <button
+                    key={item.to}
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      navigate(item.to);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-semibold text-slate-700 hover:bg-hack-violet/5 hover:text-hack-violet transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[22px] text-slate-400">
+                      {item.icon}
+                    </span>
+                    {item.label}
+                  </button>
+                ))}
+              </nav>
+
+              {/* Drawer footer */}
+              <div className="px-5 py-4 border-t border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="relative overflow-hidden w-9 h-9 rounded-full bg-slate-200 ring-2 ring-white">
+                    <img
+                      alt="User avatar"
+                      className="w-full h-full object-cover"
+                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuAP3xYuUXZOKXOoIlmBuFJ10zmQt3yiJsNOoLn9J-_xXRsQtM9kmT7lUlQA3rcMZqaTACNFFz7PqTkhL1vMql68caAw3ltGNPxDQpkTG5n5vR7bB3tIslV7SB26bPEYZIXpFSkKbeC0n2G-aTEE2TPgapLfUKEvxAU47Jh8Mxp2omyl4dp1r80K0LjvvdUs3SDC9cu9q1Mn4IkwJCjPkJt65emRddpd7pe4cNAL8THqlj1CB5GPjnS65GN_Kxq0uutLofuWDUSpb4ob"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-slate-900 truncate">Sarah</p>
+                    <p className="text-xs text-slate-400 truncate">name@example.com</p>
+                  </div>
+                </div>
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <header className="sticky top-0 z-40 w-full bg-background-light/80 backdrop-blur-md border-b border-slate-200/50">
         <div className="max-w-md mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setMenuOpen(true)}
+              className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-200/50 transition-colors text-slate-600"
+            >
+              <span className="material-symbols-outlined">menu</span>
+            </button>
+          </div>
           <h1 className="text-base font-bold tracking-tight text-slate-900">Health Journal</h1>
           <div className="flex items-center justify-end w-10">
             <NavLink
