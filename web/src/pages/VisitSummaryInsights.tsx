@@ -1,8 +1,10 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { computeBiasDetection } from "../lib/biasScore";
 import { VISIT_HISTORY_KEY, type SavedVisit } from "../data/journalData";
-import { useVisitInsights, type MedicalTerm, type NextStep } from "../state/visitInsights";
+import { useVisitInsights, type MedicalTerm, type NextStep, type PrepareQuestion } from "../state/visitInsights";
+
+const PREPARE_STORAGE_KEY = "clarity-prepare";
 
 export default function VisitSummaryInsights() {
   const navigate = useNavigate();
@@ -13,14 +15,52 @@ export default function VisitSummaryInsights() {
     followUpQuestions,
     medicalTerms,
     biasDetection,
+    prepareContext,
     setTranscript,
     setSummaryBullets,
     setNextSteps,
     setFollowUpQuestions,
     setMedicalTerms,
     setBiasDetection,
+    setPrepareContext,
+    toggleQuestionAddressed,
     reset: resetInsights,
   } = useVisitInsights();
+
+  // Load prepare context from localStorage on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(PREPARE_STORAGE_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      const symptoms = data.symptoms || "";
+      const goals = data.goals || "";
+      const questions: PrepareQuestion[] = [];
+
+      // Get saved question IDs
+      const savedIds = new Set<string>(Array.isArray(data.savedIds) ? data.savedIds : []);
+
+      // Build saved questions array from questions that were marked as saved
+      if (Array.isArray(data.questions)) {
+        for (const q of data.questions) {
+          if (q && typeof q === "object" && savedIds.has(q.id)) {
+            questions.push({
+              id: q.id,
+              category: q.category || "General",
+              question: q.question || "",
+              addressed: false,
+            });
+          }
+        }
+      }
+
+      if (symptoms || goals || questions.length) {
+        setPrepareContext({ symptoms, goals, savedQuestions: questions });
+      }
+    } catch {
+      /* ignore corrupt data */
+    }
+  }, [setPrepareContext]);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -124,7 +164,17 @@ export default function VisitSummaryInsights() {
       const insights = await fetch("/api/visit-insights", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transcript: text }),
+        body: JSON.stringify({
+          transcript: text,
+          prepareContext: prepareContext.savedQuestions.length > 0 ? {
+            symptoms: prepareContext.symptoms,
+            goals: prepareContext.goals,
+            savedQuestions: prepareContext.savedQuestions.map((q) => ({
+              category: q.category,
+              question: q.question,
+            })),
+          } : undefined,
+        }),
       });
       const insightsJson = await insights.json();
       if (!insights.ok) throw new Error(insightsJson?.error ?? "Insights failed.");
@@ -196,6 +246,11 @@ export default function VisitSummaryInsights() {
         specialty: "Cardiology",
         summaryBullets: savedBullets,
         nextSteps: savedSteps,
+        prepareContext: prepareContext.savedQuestions.length > 0 ? {
+          symptoms: prepareContext.symptoms,
+          goals: prepareContext.goals,
+          savedQuestions: prepareContext.savedQuestions,
+        } : undefined,
         icon: "cardiology",
         accent: "violet",
         createdAt: now,
@@ -365,10 +420,77 @@ export default function VisitSummaryInsights() {
               </ul>
             ) : (
               <p className="mt-3 text-sm text-slate-500 leading-relaxed">
-                After transcription, we’ll suggest 3–6 clarifying questions you can ask at a follow-up.
+                After transcription, we'll suggest 3–6 clarifying questions you can ask at a follow-up.
               </p>
             )}
           </div>
+
+          {/* Prepared Questions from Prepare page */}
+          {prepareContext.savedQuestions.length > 0 && (
+            <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
+              <div className="flex items-center justify-between">
+                <h4 className="text-base font-bold text-slate-900">Your Prepared Questions</h4>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                  From Prep
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-slate-500">
+                Mark questions as addressed during your visit
+              </p>
+              <div className="mt-3 space-y-2">
+                {prepareContext.savedQuestions.map((q) => (
+                  <label
+                    key={q.id}
+                    className="group flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 cursor-pointer hover:bg-slate-100 transition-colors"
+                  >
+                    <div className="relative flex items-center mt-0.5">
+                      <input
+                        className="peer size-5 appearance-none rounded-md border-2 border-slate-200 bg-transparent checked:border-0 transition-all cursor-pointer"
+                        type="checkbox"
+                        checked={q.addressed}
+                        onChange={() => toggleQuestionAddressed(q.id)}
+                      />
+                      <div className="absolute inset-0 hidden peer-checked:flex items-center justify-center rounded-md bg-hackviolet-gradient pointer-events-none">
+                        <span className="material-symbols-outlined text-white text-[14px] font-bold">
+                          check
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <span
+                        className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest mb-1 ${
+                          q.addressed
+                            ? "bg-slate-200 text-slate-400"
+                            : "bg-violet-100 text-violet-600"
+                        }`}
+                      >
+                        {q.category}
+                      </span>
+                      <p
+                        className={`text-sm leading-relaxed transition-colors ${
+                          q.addressed ? "text-slate-400 line-through" : "text-slate-700"
+                        }`}
+                      >
+                        {q.question}
+                      </p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+              <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500">
+                  {prepareContext.savedQuestions.filter((q) => q.addressed).length} of{" "}
+                  {prepareContext.savedQuestions.length} addressed
+                </span>
+                {prepareContext.savedQuestions.some((q) => !q.addressed) && (
+                  <span className="text-xs font-medium text-amber-600 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[14px]">info</span>
+                    Some questions not yet addressed
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Bias detection (placeholder) */}
           <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">

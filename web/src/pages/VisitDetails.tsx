@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { VISIT_HISTORY_KEY, type SavedVisit } from "../data/journalData";
+import { VISIT_HISTORY_KEY, type SavedVisit, type SavedPrepareQuestion } from "../data/journalData";
 
 interface VisitData {
   id: string;
@@ -18,6 +18,7 @@ interface VisitData {
   medications: { name: string; dosage: string; instruction: string; change?: string }[];
   nextSteps: { title: string; detail: string; done: boolean }[];
   notes: string;
+  preparedQuestions?: SavedPrepareQuestion[];
 }
 
 function savedVisitToVisitData(sv: SavedVisit): VisitData {
@@ -39,6 +40,7 @@ function savedVisitToVisitData(sv: SavedVisit): VisitData {
     medications: [],
     nextSteps: sv.nextSteps.map((s) => ({ title: s.title, detail: s.detail ?? "", done: false })),
     notes: "",
+    preparedQuestions: sv.prepareContext?.savedQuestions,
   };
 }
 
@@ -338,6 +340,70 @@ export default function VisitDetails() {
             ))}
           </div>
         </section>
+
+        {/* Prepared Questions */}
+        {visit.preparedQuestions && visit.preparedQuestions.length > 0 && (
+          <section className="flex flex-col gap-3">
+            <h3 className="gradient-text text-sm font-extrabold uppercase tracking-tight px-1">
+              Questions You Prepared
+            </h3>
+            <div className="rounded-2xl bg-white p-4 border border-slate-100 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-medium text-slate-500">
+                  {visit.preparedQuestions.filter((q) => q.addressed).length} of{" "}
+                  {visit.preparedQuestions.length} addressed during visit
+                </span>
+              </div>
+              <div className="space-y-2">
+                {visit.preparedQuestions.map((q) => (
+                  <div
+                    key={q.id}
+                    className={`flex items-start gap-3 p-3 rounded-xl border ${
+                      q.addressed
+                        ? "bg-green-50 border-green-100"
+                        : "bg-amber-50 border-amber-100"
+                    }`}
+                  >
+                    <div className="mt-0.5">
+                      {q.addressed ? (
+                        <span className="material-symbols-outlined text-green-500 text-[18px]">
+                          check_circle
+                        </span>
+                      ) : (
+                        <span className="material-symbols-outlined text-amber-500 text-[18px]">
+                          help
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <span
+                        className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest mb-1 ${
+                          q.addressed
+                            ? "bg-green-100 text-green-600"
+                            : "bg-amber-100 text-amber-600"
+                        }`}
+                      >
+                        {q.category}
+                      </span>
+                      <p
+                        className={`text-sm leading-relaxed ${
+                          q.addressed ? "text-slate-600" : "text-slate-700"
+                        }`}
+                      >
+                        {q.question}
+                      </p>
+                      {!q.addressed && (
+                        <p className="text-xs text-amber-600 mt-1 font-medium">
+                          Consider asking this at your next visit
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Doctor's notes */}
         <section className="flex flex-col gap-3">

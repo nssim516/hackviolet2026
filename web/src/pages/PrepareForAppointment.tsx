@@ -528,7 +528,7 @@ export default function PrepareForAppointment() {
       </div>
 
       {/* Bottom CTA */}
-      <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background-light via-background-light to-transparent z-40 flex justify-center">
+      <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background-light via-background-light to-transparent z-40 flex flex-col items-center gap-3">
         <button
           type="button"
           onClick={generateQuestions}
@@ -547,6 +547,23 @@ export default function PrepareForAppointment() {
             </>
           )}
         </button>
+        {savedIds.size > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              // Save current state before navigating
+              persistToStorage();
+              navigate("/summary");
+            }}
+            className="w-full max-w-md bg-white text-hack-violet font-bold text-base py-3 rounded-2xl shadow-md border-2 border-hack-violet/20 flex items-center justify-center gap-2 transition-all hover:border-hack-violet/40 active:scale-[0.98]"
+          >
+            <span className="material-symbols-outlined text-[20px]">play_arrow</span>
+            Start Visit Recording
+            <span className="text-xs font-semibold text-gray-400 ml-1">
+              ({savedIds.size} questions ready)
+            </span>
+          </button>
+        )}
       </div>
     </div>
   );

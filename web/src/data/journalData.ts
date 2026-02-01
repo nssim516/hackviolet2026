@@ -91,6 +91,19 @@ export const VISIT_HISTORY_KEY = "hackviolet.visit.history.v1";
 
 export type SavedVisitStep = { title: string; detail?: string };
 
+export type SavedPrepareQuestion = {
+  id: string;
+  category: string;
+  question: string;
+  addressed: boolean;
+};
+
+export type SavedPrepareContext = {
+  symptoms: string;
+  goals: string;
+  savedQuestions: SavedPrepareQuestion[];
+};
+
 export type SavedVisit = {
   id: string;
   dateLabel: string;
@@ -98,6 +111,7 @@ export type SavedVisit = {
   specialty: string;
   summaryBullets: string[];
   nextSteps: SavedVisitStep[];
+  prepareContext?: SavedPrepareContext; // optional for backward compatibility
   icon: string;
   accent: "violet" | "pink";
   createdAt: number; // epoch ms for sorting

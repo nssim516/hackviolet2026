@@ -3,6 +3,19 @@ import React, { createContext, useContext, useMemo, useState } from "react";
 export type NextStep = { title: string; detail?: string; done: boolean };
 export type MedicalTerm = { term: string; explanation: string };
 
+export type PrepareQuestion = {
+  id: string;
+  category: string;
+  question: string;
+  addressed: boolean;
+};
+
+export type PrepareContext = {
+  symptoms: string;
+  goals: string;
+  savedQuestions: PrepareQuestion[];
+};
+
 export type VisitInsightsData = {
   transcript: string;
   summaryBullets: string[];
@@ -13,6 +26,7 @@ export type VisitInsightsData = {
     score: number | null;
     notes: string[];
   };
+  prepareContext: PrepareContext;
 };
 
 type VisitInsightsContextValue = VisitInsightsData & {
@@ -22,10 +36,18 @@ type VisitInsightsContextValue = VisitInsightsData & {
   setFollowUpQuestions: (v: string[]) => void;
   setMedicalTerms: (v: MedicalTerm[]) => void;
   setBiasDetection: (v: VisitInsightsData["biasDetection"]) => void;
+  setPrepareContext: (v: PrepareContext) => void;
+  toggleQuestionAddressed: (questionId: string) => void;
   reset: () => void;
 };
 
 const VisitInsightsContext = createContext<VisitInsightsContextValue | null>(null);
+
+const initialPrepareContext: PrepareContext = {
+  symptoms: "",
+  goals: "",
+  savedQuestions: [],
+};
 
 const initial: VisitInsightsData = {
   transcript: "",
@@ -34,6 +56,7 @@ const initial: VisitInsightsData = {
   followUpQuestions: [],
   medicalTerms: [],
   biasDetection: { score: null, notes: [] },
+  prepareContext: initialPrepareContext,
 };
 
 export function VisitInsightsProvider({ children }: { children: React.ReactNode }) {
@@ -43,6 +66,16 @@ export function VisitInsightsProvider({ children }: { children: React.ReactNode 
   const [followUpQuestions, setFollowUpQuestions] = useState<string[]>(initial.followUpQuestions);
   const [medicalTerms, setMedicalTerms] = useState<MedicalTerm[]>(initial.medicalTerms);
   const [biasDetection, setBiasDetection] = useState(initial.biasDetection);
+  const [prepareContext, setPrepareContext] = useState<PrepareContext>(initial.prepareContext);
+
+  const toggleQuestionAddressed = (questionId: string) => {
+    setPrepareContext((prev) => ({
+      ...prev,
+      savedQuestions: prev.savedQuestions.map((q) =>
+        q.id === questionId ? { ...q, addressed: !q.addressed } : q
+      ),
+    }));
+  };
 
   const value = useMemo<VisitInsightsContextValue>(
     () => ({
@@ -52,6 +85,7 @@ export function VisitInsightsProvider({ children }: { children: React.ReactNode 
       followUpQuestions,
       medicalTerms,
       biasDetection,
+      prepareContext,
 
       setTranscript,
       setSummaryBullets,
@@ -59,6 +93,8 @@ export function VisitInsightsProvider({ children }: { children: React.ReactNode 
       setFollowUpQuestions,
       setMedicalTerms,
       setBiasDetection,
+      setPrepareContext,
+      toggleQuestionAddressed,
 
       reset: () => {
         setTranscript(initial.transcript);
@@ -67,9 +103,10 @@ export function VisitInsightsProvider({ children }: { children: React.ReactNode 
         setFollowUpQuestions(initial.followUpQuestions);
         setMedicalTerms(initial.medicalTerms);
         setBiasDetection(initial.biasDetection);
+        setPrepareContext(initial.prepareContext);
       },
     }),
-    [biasDetection, followUpQuestions, medicalTerms, nextSteps, summaryBullets, transcript]
+    [biasDetection, followUpQuestions, medicalTerms, nextSteps, prepareContext, summaryBullets, transcript]
   );
 
   return <VisitInsightsContext.Provider value={value}>{children}</VisitInsightsContext.Provider>;

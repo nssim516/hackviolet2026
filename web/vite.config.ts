@@ -169,7 +169,7 @@ Generate 3 unique, specific, patient-centered questions.
         }
       });
 
-      // POST /api/visit-insights  { transcript: string }
+      // POST /api/visit-insights  { transcript: string, prepareContext?: { symptoms, goals, savedQuestions } }
       server.middlewares.use("/api/visit-insights", async (req, res, next) => {
         if (req.method !== "POST") return next();
 
@@ -183,13 +183,51 @@ Generate 3 unique, specific, patient-centered questions.
 
         try {
           const raw = await readBody(req);
-          const payload = JSON.parse(raw.toString("utf-8") || "{}") as { transcript?: string };
+          const payload = JSON.parse(raw.toString("utf-8") || "{}") as {
+            transcript?: string;
+            prepareContext?: {
+              symptoms?: string;
+              goals?: string;
+              savedQuestions?: { category: string; question: string }[];
+            };
+          };
           const transcript = (payload.transcript || "").trim();
           if (!transcript) return json(res, 400, { error: "Missing transcript." });
 
+          // Build context from prepare page if available
+          const prepareContext = payload.prepareContext;
+          let prepareSection = "";
+          if (prepareContext) {
+            const parts: string[] = [];
+            if (prepareContext.symptoms?.trim()) {
+              parts.push(`Patient's symptoms/observations before visit:\n"""${prepareContext.symptoms.trim()}"""`);
+            }
+            if (prepareContext.goals?.trim()) {
+              parts.push(`Patient's goals for this visit:\n"""${prepareContext.goals.trim()}"""`);
+            }
+            if (prepareContext.savedQuestions?.length) {
+              const qs = prepareContext.savedQuestions
+                .map((q) => `- [${q.category}] ${q.question}`)
+                .join("\n");
+              parts.push(`Questions the patient prepared to ask:\n${qs}`);
+            }
+            if (parts.length) {
+              prepareSection = `
+PATIENT PREPARATION CONTEXT:
+${parts.join("\n\n")}
+
+Use this context to:
+1. Make the summaryBullets more relevant to what the patient cared about
+2. In followUpQuestions, prioritize questions from the patient's prepared list that weren't clearly addressed in the transcript
+3. Note in nextSteps if any of the patient's goals weren't discussed
+
+`;
+            }
+          }
+
           const prompt = `
 Summarize this medical visit transcript in a patient-centered, non-judgmental way.
-
+${prepareSection}
 Return ONLY valid JSON with exactly these keys:
 - summaryBullets: string[]  (3-6 bullets, plain language)
 - nextSteps: { title: string, detail?: string }[] (3-8 actionable checklist items)
@@ -201,7 +239,7 @@ The biasDetection.score should be a 0-100 estimate of dismissive/biased communic
 
 Calibration (be willing to use the middle/high end when warranted, while staying non-judgmental):
 - 0–10: neutral/supportive, no clear dismissive signals
-- 15–35: mild signals (e.g., minimizing language like “just”, “normal”, rushed tone, vague reassurance)
+- 15–35: mild signals (e.g., minimizing language like "just", "normal", rushed tone, vague reassurance)
 - 40–60: moderate signals (repeated minimization/deflection, shutting down questions, unclear rationale)
 - 65–85: strong signals (multiple dismissive patterns across the snippet)
 - 90–99: severe signals (condescension, repeated dismissal/deflection/authority, sarcasm, shaming language)
@@ -211,7 +249,7 @@ Do NOT accuse anyone or infer intent; just describe language patterns and why yo
 
 For nextSteps:
 - Make them practical (tests, follow-ups, questions to ask, paperwork, medication pickup, scheduling).
-- Do NOT give diagnosis/treatment advice. If missing info, phrase as “Confirm with clinician: …”.
+- Do NOT give diagnosis/treatment advice. If missing info, phrase as "Confirm with clinician: …".
 
 For medicalTerms:
 - Extract terms that were actually used in the transcript and might be confusing (jargon, acronyms, test names, conditions).
