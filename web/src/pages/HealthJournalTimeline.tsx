@@ -415,8 +415,31 @@ export default function HealthJournalTimeline() {
                       <span className="font-bold text-slate-900 block text-[10px] mb-1 uppercase tracking-wider opacity-60">
                         Visit Summary
                       </span>
-                      {visit.summary}
+                      {visit.summaryBullets && visit.summaryBullets.length > 0 ? (
+                        <ul className="list-disc pl-4 space-y-1">
+                          {visit.summaryBullets.map((b, i) => (
+                            <li key={i}>{b}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-slate-400 italic">No summary available.</p>
+                      )}
                     </div>
+                    {visit.nextSteps && visit.nextSteps.length > 0 && (
+                      <div className="mt-2 text-sm text-slate-600 bg-slate-50/80 p-3 rounded-xl leading-relaxed">
+                        <span className="font-bold text-slate-900 block text-[10px] mb-1 uppercase tracking-wider opacity-60">
+                          Follow-up &amp; Next Steps
+                        </span>
+                        <ul className="space-y-1">
+                          {visit.nextSteps.map((s, i) => (
+                            <li key={i} className="flex items-start gap-2">
+                              <span className="material-symbols-outlined text-[16px] text-hack-violet mt-0.5">check_circle</span>
+                              <span>{s.title}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                     <div className="mt-3 flex items-center justify-between">
                       <button
                         type="button"
