@@ -406,7 +406,7 @@ export default function PrepareForAppointment() {
                   >
                     {q.category}
                   </span>
-                  <p className="text-text-dark font-bold leading-tight text-lg">{q.question}</p>
+                  <p className="text-text-dark font-bold leading-tight text-base line-clamp-4 overflow-hidden">{q.question}</p>
                 </div>
                 <button
                   type="button"

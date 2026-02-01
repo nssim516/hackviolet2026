@@ -177,15 +177,25 @@ export default function VisitSummaryInsights() {
       });
 
       // Persist this visit to history so it shows on the journal timeline.
-      const bullets = Array.isArray(insightsJson?.summaryBullets) ? insightsJson.summaryBullets : [];
-      const summaryText = bullets.length > 0 ? bullets.join(" ") : text.slice(0, 120);
+      const savedBullets: string[] = Array.isArray(insightsJson?.summaryBullets)
+        ? insightsJson.summaryBullets
+        : text ? [text.slice(0, 120)] : [];
+      const savedSteps = (Array.isArray(insightsJson?.nextSteps) ? insightsJson.nextSteps : [])
+        .map((s: any) => {
+          if (typeof s === "string") return { title: s };
+          if (s && typeof s === "object" && typeof s.title === "string")
+            return { title: s.title, ...(typeof s.detail === "string" ? { detail: s.detail } : {}) };
+          return null;
+        })
+        .filter(Boolean);
       const now = Date.now();
       const newVisit: SavedVisit = {
         id: `visit-${now}`,
         dateLabel: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }),
         doctor: "Dr. Sarah Smith",
         specialty: "Cardiology",
-        summary: summaryText,
+        summaryBullets: savedBullets,
+        nextSteps: savedSteps,
         icon: "cardiology",
         accent: "violet",
         createdAt: now,
@@ -503,14 +513,6 @@ export default function VisitSummaryInsights() {
           </div>
         </section>
       </main>
-
-      {/* Floating CTA */}
-      <div className="fixed bottom-8 left-0 right-0 z-30 flex justify-center px-4 pointer-events-none">
-        <button className="pointer-events-auto shadow-xl shadow-pink-500/20 flex items-center justify-center gap-3 h-14 pl-5 pr-7 bg-hackviolet-gradient rounded-full text-white font-bold text-base hover:scale-[1.02] active:scale-95 transition-all">
-          <span className="material-symbols-outlined">forum</span>
-          Ask a Follow-up Question
-        </button>
-      </div>
 
       {/* Bottom fade */}
       <div className="fixed bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background-light to-transparent pointer-events-none z-10" />

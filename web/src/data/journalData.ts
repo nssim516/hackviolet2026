@@ -89,12 +89,15 @@ export const MOODS = [
 
 export const VISIT_HISTORY_KEY = "hackviolet.visit.history.v1";
 
+export type SavedVisitStep = { title: string; detail?: string };
+
 export type SavedVisit = {
   id: string;
   dateLabel: string;
   doctor: string;
   specialty: string;
-  summary: string;
+  summaryBullets: string[];
+  nextSteps: SavedVisitStep[];
   icon: string;
   accent: "violet" | "pink";
   createdAt: number; // epoch ms for sorting
