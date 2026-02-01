@@ -199,12 +199,13 @@ Return ONLY valid JSON with exactly these keys:
 
 The biasDetection.score should be a 0-100 estimate of dismissive/biased communication signals (0 = none, 100 = frequent).
 
-Calibration (be willing to use the middle of the scale when warranted, while staying non-judgmental):
+Calibration (be willing to use the middle/high end when warranted, while staying non-judgmental):
 - 0–10: neutral/supportive, no clear dismissive signals
 - 15–35: mild signals (e.g., minimizing language like “just”, “normal”, rushed tone, vague reassurance)
 - 40–60: moderate signals (repeated minimization/deflection, shutting down questions, unclear rationale)
 - 65–85: strong signals (multiple dismissive patterns across the snippet)
-- 90–100: extreme/frequent signals (consistent dismissal + repeated deflection/authority; rare)
+- 90–99: severe signals (condescension, repeated dismissal/deflection/authority, sarcasm, shaming language)
+- 100: explicit insult/belittling/derogatory language directed at the patient (e.g., calling them stupid/crazy, mocking symptoms, or clearly demeaning them). If this occurs, score 100 even if it is a single moment.
 
 Do NOT accuse anyone or infer intent; just describe language patterns and why you scored it that way in notes.
 
