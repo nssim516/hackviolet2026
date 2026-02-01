@@ -23,7 +23,7 @@ export default function AppointmentAssistant() {
             className="w-8 h-8 rounded-full bg-center bg-cover border border-slate-100"
             style={{
               backgroundImage:
-                'url("https://lh3.googleusercontent.com/aida-public/AB6AXuC5XjvuHanY5sl6hQRkya_Fmnok5fVXi4MiekHL0zGTyNUm1uONSiXnG4JT2x_n4VkH7RvBcUSgaBjNZKyFl-fGu_IHsnZsjUL1aHrplfYPV43RKBAvWJNQF4nuKCwacPy7OXH1KxFbKzigdHwo43tDaUWMerVWGylRxHjSCh5fsO4ux8bIG-oYF57JSCrGOrDiO9pTCrHfq1jOqQqaPH7Mo49CMDder80-F7GR7w4Y5jLbFvQx2zdgEu5oAAU_Q3xDgKCg06g8iPE3")',
+                'url("https://upload.wikimedia.org/wikipedia/commons/4/41/Kamala_Harris_Vice_Presidential_Portrait.jpg")',
             }}
           />
           <div className="flex flex-col">

@@ -295,7 +295,7 @@ export default function VisitSummaryInsights() {
                 aria-label="Portrait of Dr. Sarah Smith"
                 style={{
                   backgroundImage:
-                    "url('https://lh3.googleusercontent.com/aida-public/AB6AXuA-XV4Uj0Ieg_NGCpTC0DB3Pta56wMCoQxOCx99ZFYTTZrZp-QWUvLe-F8d2obCU-1xf04nAk2STuqQ2lGZMLkJyZfTSExNkdvre8kEQ3DxRa16MAiV-sP4qtGjCfF0TxlwLIfs-b1BeYLrMBAyaJdwOrWLs83yGM8BYQXtRW-WcCusTqx8GXzwHbNSQSfwhjR6Uok6pRs6e7p3kabg_8CrMPQJpPyoOaAcphna1yIHyxITyJV7W84KrjeQMMEYuqH1jNj1WF3IgIEw')",
+                    "url('https://images.usatf.org/USATF/media/USATF/BioPhotos/Athlete%20Bios/Sydney-McLaughlin_1.jpg?h=300&w=300&mode=crop&format=jpg&quality=65&cache=1.2.25&sourceDomain=https://www.usatf.org')",
                 }}
               />
               <div className="absolute -bottom-1 -right-1 flex items-center justify-center size-6 rounded-full bg-hackviolet-gradient border-2 border-white text-white">
@@ -373,57 +373,7 @@ export default function VisitSummaryInsights() {
             )}
           </div>
 
-          {/* Summary bullets */}
-          <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
-            {summaryBullets.length ? (
-              <ul className="list-disc pl-5 space-y-2 text-base font-normal leading-relaxed text-slate-600">
-                {summaryBullets.map((b, i) => (
-                  <li key={i}>{b}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-base font-normal leading-relaxed text-slate-600">
-                Record a short snippet, then we’ll generate bullet-point visit notes here.
-              </p>
-            )}
 
-            {transcript && (
-              <details className="mt-4 rounded-xl bg-slate-50 border border-slate-100 p-4">
-                <summary className="cursor-pointer text-sm font-bold text-slate-700">
-                  View transcript
-                </summary>
-                <p className="mt-3 text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
-                  {transcript}
-                </p>
-              </details>
-            )}
-          </div>
-
-          {/* Follow-up questions */}
-          <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
-            <div className="flex items-center justify-between">
-              <h4 className="text-base font-bold text-slate-900">Recommended follow-up questions</h4>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                AI-generated
-              </span>
-            </div>
-            {followUpQuestions.length ? (
-              <ul className="mt-3 space-y-2">
-                {followUpQuestions.map((q, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="material-symbols-outlined text-hackviolet-start text-[18px] mt-0.5">
-                      help
-                    </span>
-                    <span className="text-sm text-slate-700 leading-relaxed">{q}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-3 text-sm text-slate-500 leading-relaxed">
-                After transcription, we'll suggest 3–6 clarifying questions you can ask at a follow-up.
-              </p>
-            )}
-          </div>
 
           {/* Prepared Questions from Prepare page */}
           {prepareContext.savedQuestions.length > 0 && (
@@ -491,6 +441,56 @@ export default function VisitSummaryInsights() {
               </div>
             </div>
           )}
+          {/* Summary bullets */}
+          <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
+            {summaryBullets.length ? (
+              <ul className="list-disc pl-5 space-y-2 text-base font-normal leading-relaxed text-slate-600">
+                {summaryBullets.map((b, i) => (
+                  <li key={i}>{b}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-base font-normal leading-relaxed text-slate-600">
+                Record a short snippet, then we’ll generate bullet-point visit notes here.
+              </p>
+            )}
+
+            {transcript && (
+              <details className="mt-4 rounded-xl bg-slate-50 border border-slate-100 p-4">
+                <summary className="cursor-pointer text-sm font-bold text-slate-700">
+                  View transcript
+                </summary>
+                <p className="mt-3 text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
+                  {transcript}
+                </p>
+              </details>
+            )}
+          </div>
+          {/* Follow-up questions */}
+          <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
+            <div className="flex items-center justify-between">
+              <h4 className="text-base font-bold text-slate-900">Recommended follow-up questions</h4>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                AI-generated
+              </span>
+            </div>
+            {followUpQuestions.length ? (
+              <ul className="mt-3 space-y-2">
+                {followUpQuestions.map((q, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <span className="material-symbols-outlined text-hackviolet-start text-[18px] mt-0.5">
+                      help
+                    </span>
+                    <span className="text-sm text-slate-700 leading-relaxed">{q}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-3 text-sm text-slate-500 leading-relaxed">
+                After transcription, we'll suggest 3–6 clarifying questions you can ask at a follow-up.
+              </p>
+            )}
+          </div>
 
           {/* Bias detection (placeholder) */}
           <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">

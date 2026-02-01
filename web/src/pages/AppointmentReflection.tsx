@@ -37,7 +37,7 @@ export default function AppointmentReflection() {
                 aria-label="Doctor profile portrait"
                 style={{
                   backgroundImage:
-                    'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAFTewHRC0480LWN7s_7UU4kQ1cka2P4Z1q6FaF00QOyaqai_RyEwaVsUwjYoqRsgIzmwBDMPHmrMS7PuSncgqSgMnF1f67SLZq-6K_FwbD34NKgSkRPqqnok6wUVL1rgKJiygNr0_9Z3l4cSWwWpOuE99W3H_XnVDyPKkeLqSG5IJe4NfThPBm39FyVcFwhmar3adTuD9GeiLUd_dIdFfxRpdVgHsuRZqM01YOa80WrXSm67X0gY4MbP9KVKEiy3WLzSb3gYrT9dd4")',
+                    'url("https://upload.wikimedia.org/wikipedia/commons/4/41/Kamala_Harris_Vice_Presidential_Portrait.jpg")',
                 }}
               />
               <div className="absolute -bottom-1 -right-1 bg-white p-1 rounded-full shadow-sm">

@@ -296,7 +296,7 @@ export default function PrepareForAppointment() {
             <img
               alt="Dr. Smith profile portrait"
               className="w-full h-full object-cover"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCweBfcdNQcpm6c39GxNlGuwYwy_lKOeSPWf580NYkWhp3EUJb5CRwH23ijdgYqJtehoMFNXO0MfvVSJrC5EKYl-KYDOJPWZ7VK3gWD7L7gNx9V4OtbtBhhreWV4YOMRd6O3XqrpXgFqiNWkOrdi6tmMa7KiR2AvBhF70-CbJ1615d0696-wuaXjOAl4_YG98QxNxUaOMX20lgHQ-RLduCiRto-xQsXVnmOVI9vOPZd64c_JOBjoMoivj3zqE_2M21sndzFuzya0RXu"
+              src="https://images.usatf.org/USATF/media/USATF/BioPhotos/Athlete%20Bios/Sydney-McLaughlin_1.jpg?h=300&w=300&mode=crop&format=jpg&quality=65&cache=1.2.25&sourceDomain=https://www.usatf.org"
             />
           </div>
           <h1 className="text-text-dark text-xl font-extrabold tracking-tight">Dr. Sarah Smith</h1>
