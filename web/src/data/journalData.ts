@@ -84,3 +84,18 @@ export const MOODS = [
   { label: "Pain", icon: "healing" },
   { label: "Steady", icon: "self_improvement" },
 ];
+
+/* ── Visit history (recorded visits) ── */
+
+export const VISIT_HISTORY_KEY = "hackviolet.visit.history.v1";
+
+export type SavedVisit = {
+  id: string;
+  dateLabel: string;
+  doctor: string;
+  specialty: string;
+  summary: string;
+  icon: string;
+  accent: "violet" | "pink";
+  createdAt: number; // epoch ms for sorting
+};
