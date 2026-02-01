@@ -226,9 +226,9 @@ export default function VisitSummaryInsights() {
           <span className="material-symbols-outlined text-slate-900">arrow_back_ios_new</span>
         </button>
         <h1 className="text-lg font-bold leading-tight tracking-tight">Visit Insights</h1>
-        <button className="flex size-10 items-center justify-center rounded-full hover:bg-black/5 transition-colors">
+        {/* <button className="flex size-10 items-center justify-center rounded-full hover:bg-black/5 transition-colors">
           <span className="material-symbols-outlined text-slate-900">share</span>
-        </button>
+        </button> */}
       </header>
 
       <main className="flex flex-col gap-6 px-4 pt-2">
