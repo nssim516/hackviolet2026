@@ -37,6 +37,7 @@ export default function HealthJournalTimeline() {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [showAllNotes, setShowAllNotes] = useState(false);
+  const [savedVisits, setSavedVisits] = useState<SavedVisit[]>([]);
   const [dragOffsets, setDragOffsets] = useState<Record<string, number>>({});
   const [menuOpen, setMenuOpen] = useState(false);
   const dragState = useRef<{ id: string | null; startX: number; pointerId: number | null }>({
