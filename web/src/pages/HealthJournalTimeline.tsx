@@ -267,69 +267,92 @@ export default function HealthJournalTimeline() {
 
         {/* Timeline */}
         <div className="relative pl-4 ml-2 space-y-8 border-l-2 border-slate-200/60 pb-4">
-          {APPOINTMENTS.map((appointment) => {
-            const isViolet = appointment.accent === "violet";
-            return (
-              <div key={appointment.id} className="relative pl-8 group">
-                <div
-                  className={`absolute -left-[9px] top-6 h-[16px] w-[16px] rounded-full bg-white border-[3px] transition-transform z-10 shadow-sm ${
-                    isViolet
-                      ? "border-hack-violet group-hover:scale-110"
-                      : "border-slate-300 group-hover:border-hack-pink"
-                  }`}
-                />
-                <article className="bg-card-light rounded-2xl p-0 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-white overflow-hidden transition-all hover:shadow-md">
-                  <div className="p-4 pb-2 flex justify-between items-start gap-4">
-                    <div className="flex gap-3">
-                      <div
-                        className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${
-                          isViolet ? "bg-hack-violet/10" : "bg-hack-pink/10"
-                        }`}
-                      >
-                        <span
-                          className={`material-symbols-outlined ${
-                            isViolet ? "text-hack-violet" : "text-hack-pink"
-                          }`}
-                        >
-                          {appointment.icon}
-                        </span>
-                      </div>
-                      <div>
-                        <h4 className="text-base font-bold text-slate-900 leading-tight">
-                          {appointment.doctor}
-                        </h4>
-                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mt-0.5">
-                          {appointment.specialty}
-                        </p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-bold bg-slate-50 text-slate-500 px-2 py-1 rounded-lg">
-                      {appointment.dateLabel}
-                    </span>
+          {/* Entry 1 */}
+          <div className="relative pl-8 group">
+            <div className="absolute -left-[9px] top-6 h-[16px] w-[16px] rounded-full bg-white border-[3px] border-hack-violet group-hover:scale-110 transition-transform z-10 shadow-sm" />
+            <article className="bg-card-light rounded-2xl p-0 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-white overflow-hidden transition-all hover:shadow-md">
+              <div className="p-4 pb-2 flex justify-between items-start gap-4">
+                <div className="flex gap-3">
+                  <div className="h-10 w-10 rounded-full bg-hack-violet/10 flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-hack-violet">cardiology</span>
                   </div>
-                  <div className="px-4 pb-4">
-                    <div className="mt-2 text-sm text-slate-600 bg-slate-50/80 p-3 rounded-xl leading-relaxed">
-                      <span className="font-bold text-slate-900 block text-[10px] mb-1 uppercase tracking-wider opacity-60">
-                        Visit Summary
-                      </span>
-                      {appointment.summary}
-                    </div>
-                    <div className="mt-3 flex items-center justify-end">
-                      <button
-                        className={`text-xs font-bold flex items-center gap-1 transition-colors ${
-                          isViolet ? "text-hack-violet" : "text-hack-pink"
-                        }`}
-                        type="button"
-                      >
-                        DETAILS{" "}
-                        <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-                      </button>
-                    </div>
+                  <div>
+                    <h4 className="text-base font-bold text-slate-900 leading-tight">
+                      Dr. Emily Chen
+                    </h4>
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mt-0.5">
+                      Cardiology
+                    </p>
                   </div>
-                </article>
+                </div>
+                <span className="text-xs font-bold bg-slate-50 text-slate-500 px-2 py-1 rounded-lg">
+                  Jan 2
+                </span>
               </div>
-            );
-          })}
+              <div className="px-4 pb-4">
+                <div className="mt-2 text-sm text-slate-600 bg-slate-50/80 p-3 rounded-xl leading-relaxed">
+                  <span className="font-bold text-slate-900 block text-[10px] mb-1 uppercase tracking-wider opacity-60">
+                    Visit Summary
+                  </span>
+                  Discussed blood pressure medication adjustments. Next follow-up scheduled for 3
+                  months.
+                </div>
+                <div className="mt-3 flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={() => navigate("/visit/1")}
+                    className="text-xs font-bold text-hack-violet flex items-center gap-1 transition-colors"
+                  >
+                    DETAILS{" "}
+                    <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+                  </button>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          {/* Entry 2 */}
+          <div className="relative pl-8 group">
+            <div className="absolute -left-[9px] top-6 h-[16px] w-[16px] rounded-full bg-white border-[3px] border-slate-300 group-hover:border-hack-pink transition-colors z-10" />
+            <article className="bg-card-light rounded-2xl p-0 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-white overflow-hidden transition-all hover:shadow-md">
+              <div className="p-4 pb-2 flex justify-between items-start gap-4">
+                <div className="flex gap-3">
+                  <div className="h-10 w-10 rounded-full bg-hack-pink/10 flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-hack-pink">stethoscope</span>
+                  </div>
+                  <div>
+                    <h4 className="text-base font-bold text-slate-900 leading-tight">
+                      Dr. Mark Solis
+                    </h4>
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mt-0.5">
+                      General Practitioner
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xs font-bold bg-slate-50 text-slate-500 px-2 py-1 rounded-lg">
+                  Sep 12
+                </span>
+              </div>
+              <div className="px-4 pb-4">
+                <div className="mt-2 text-sm text-slate-600 bg-slate-50/80 p-3 rounded-xl leading-relaxed">
+                  <span className="font-bold text-slate-900 block text-[10px] mb-1 uppercase tracking-wider opacity-60">
+                    Visit Summary
+                  </span>
+                  Annual physical completed. All vitals normal. Recommended starting Vitamin D.
+                </div>
+                <div className="mt-3 flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={() => navigate("/visit/2")}
+                    className="text-xs font-bold text-hack-pink flex items-center gap-1 transition-colors"
+                  >
+                    DETAILS{" "}
+                    <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+                  </button>
+                </div>
+              </div>
+            </article>
+          </div>
 
           {/* End marker */}
           <div className="relative pl-8 opacity-40">
@@ -371,7 +394,7 @@ export default function HealthJournalTimeline() {
             className="flex flex-col items-center gap-1 w-16 text-slate-400 hover:text-slate-600 transition-colors"
           >
             <span className="material-symbols-outlined text-[28px]">insights</span>
-            <span className="text-[10px] font-semibold">Trends</span>
+            <span className="text-[10px] font-semibold">Visit</span>
           </NavLink>
 
           <NavLink
