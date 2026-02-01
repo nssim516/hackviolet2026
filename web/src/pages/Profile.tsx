@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
+import { useTheme } from "../state/theme";
 
 const STORAGE_KEY = "healthiher-profile";
 
@@ -51,6 +52,7 @@ export default function Profile() {
   const [data, setData] = useState<ProfileData>(DEFAULTS);
   const [medInput, setMedInput] = useState("");
   const [saveFlash, setSaveFlash] = useState(false);
+  const { theme, toggleTheme, isDark } = useTheme();
 
   // load
   useEffect(() => {
@@ -287,6 +289,47 @@ export default function Profile() {
         ) : (
           /* -------- SETTINGS VIEW -------- */
           <>
+            {/* Appearance */}
+            <section className="bg-card-light rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white flex flex-col gap-5">
+              <h2 className="gradient-text text-sm font-extrabold uppercase tracking-tight">
+                Appearance
+              </h2>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-slate-600 dark:text-slate-300">
+                      {isDark ? "dark_mode" : "light_mode"}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100">Dark Mode</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {isDark ? "On" : "Off"} · {theme === "light" ? "Light theme" : "Dark theme"}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className={`relative w-14 h-8 rounded-full transition-colors duration-300 ${
+                    isDark ? "bg-hack-violet" : "bg-slate-200"
+                  }`}
+                  aria-label="Toggle dark mode"
+                >
+                  <span
+                    className={`absolute top-1 left-1 w-6 h-6 rounded-full bg-white shadow-md transition-transform duration-300 flex items-center justify-center ${
+                      isDark ? "translate-x-6" : "translate-x-0"
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[14px] text-slate-600">
+                      {isDark ? "dark_mode" : "light_mode"}
+                    </span>
+                  </span>
+                </button>
+              </div>
+            </section>
+
             <section className="bg-card-light rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white flex flex-col gap-5">
               <h2 className="gradient-text text-sm font-extrabold uppercase tracking-tight">
                 Account
